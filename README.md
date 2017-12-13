@@ -7,11 +7,11 @@ TODO: Next up is code to program the microcode for decoding/running assembly lan
 
 
 # Microcode programmer
-Use a 2048 word EEPROM, with 11 address bits
+Use a 2048 word EEPROM, with 11 address bits (a10...a0).
 
-Top 3 bits a10...a8 are unused (hardcoded to zero, so we only program when they are set to zero)
-Next 3 bits a7...a5 are what microcode step we are on (0-7, though really just use 0...4)
-Next 4 bits are what instruction opcode we are (instructions are 8 bits, top 4 are the opcode)
+* Top 4 bits: (a10...a7): unused (hardcoded to zero, so we only program when they are set to zero)
+* Next 3 bits (a6...a4): what microcode step we are on (0-7, though really just use 0...4)
+* Next 4 bits (a3...a0): what instruction opcode we are (instructions are 8 bits, top 4 are the opcode)
 
 At each address we program 2 EEPROMs, each of which stores 1 byte for that address.
 Each bit controls one control line, allowing us 16 control lines total.
