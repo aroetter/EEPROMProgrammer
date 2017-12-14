@@ -5,6 +5,8 @@
 #define EEPROM_D7    12
 #define WRITE_ENABLE 13
 
+#define EEPROM_NUM_BYTES 2048
+
 void setAddress(int address, bool outputEnable) {
   // sets top bit to 1 iff outputEnable is true. outputEnable puts EEPROM in write mode (when low), or read mode (when high).
   // it reversed b/c that pin happens to be active low
@@ -46,10 +48,10 @@ void writeEEPROM(int address, byte data) {
   delay(5); // msec // works fine for me, but in video needs to be upped to 10.
 }
 
-// only prints lower 256 bytes. TODO: change to 2048
+// print EEPROM contents
 void printContents() {
   Serial.println("------------------------------------------------------");
-  for (int base = 0; base < 256; base += 16) {
+  for (int base = 0; base < EEPROM_NUM_BYTES; base += 16) {
     byte data[16];
     for (int offset = 0; offset < 16; ++offset) {
       data[offset] = readEEPROM(base + offset);
@@ -109,6 +111,13 @@ void write7SegmentDecimalDisplayEEPROM() {
   }
 }
 
+// Clears an EEPROM, setting all data to zero. TODO: test this
+void writeBlankEEPROM() {
+  for (int addr = 0; addr < EEPROM_NUM_BYTES; ++addr) {
+    writeEEPROM(addr, 0);
+  }
+}
+
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
  * Think of this like main() */
 void setup() {
@@ -117,6 +126,7 @@ void setup() {
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
   write7SegmentDecimalDisplayEEPROM();
+  // writeBlankEEPROM();
   // TODO: writeMSBMicroCodeControlLogic();
   // TODO: writeLSBMicroCodeControlLogic();
   Serial.println("Done.");
