@@ -160,7 +160,9 @@ typedef struct MicroCodeDefT {
   uint16_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
 } MicroCodeDefT;
 
-#define NUM_MICROCODES 16 // used to sanity check size of definitional array below
+// we guarantee, via checking code below, that the following array is this size
+#define NUM_MICROCODES 16 
+
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
 static MicroCodeDefT MICROCODE[] = {
   {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
@@ -222,9 +224,37 @@ void doCommonInit() {
 // a6....a4: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
 // a3....a0: 4 bits to represent the opcode
 void writeMSBMicroCodeControlLogic() {  
-  // Iterate over every opcode
+  const int fetch_microcode_len = sizeof(FETCH_MICROCODE) / sizeof(uint16_t);
+  
   // Iterate over every microcode step w/in that opcode
   // Set the fetch instructions, then the custom microcode for each one
+  for(uint8_t i = 0; i < NUM_MICROCODES; ++i) {
+    char buf[100];
+    MicroCodeDefT mc = MICROCODE[i];
+    snprintf(buf, 100, "Programming opcode %s (binary opcode val = 0x%x)", mc.name, i);
+    Serial.println(buf);
+    for(uint8_t step = 0; step < NUM_MICROCODE_PER_OPCODE; ++step) {
+      // generate a 16 bit address of form 00000000 0sssoooo
+      // where sss is the 3 bit step. oooo is the 4 bit opcode
+      // top 5 bits are unused, EEPROM uses 11 lower bits for address only
+      // should yield a 16 bit value 00000000 0sssoooo where sss is the 3 bit step,
+      // oooo is the 4 bit opcode
+      uint16_t addr = (step << 4) | i;
+      // write either the fetch steps, or the custom control logic for the opcode
+      uint16_t data;
+      if (step < fetch_microcode_len) {
+        snprintf(buf, 100, "  Step=%d... writing fetch instruction.", step);
+        Serial.println(buf);
+        data = FETCH_MICROCODE[step];
+      } else {
+        int custom_step_to_write = step - fetch_microcode_len;
+        snprintf(buf, 1000, "  Step=%d... writing custom control logic step %d.", step, custom_step_to_write);
+        Serial.println(buf);
+        data = mc.microcode[custom_step_to_write];
+      }
+      // TODO: now write out either high byte or low byte of data to address addr.
+    }
+  }
 }
 
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
@@ -233,18 +263,16 @@ void setup() {
   doCommonInit();
 
   // Just for safety, fully zero out EEPROM before programming
-  writeBlankEEPROM();
+  writeBlankEEPROM(); // TODO: put this back in.
   
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
-  
   // write7SegmentDecimalDisplayEEPROM();
-  // writeBlankEEPROM();
-  // writeMSBMicroCodeControlLogic();
-  // TODO: writeLSBMicroCodeControlLogic();
+  writeMSBMicroCodeControlLogic();
+  // TODO: writeLSBMicroCodeControlLogic(); // This is probably the above function with an argument.
   Serial.println("Done.");
 
-  // printContents(); // TODO: put back in.
+  printContents();
 }
 
 void loop() {
