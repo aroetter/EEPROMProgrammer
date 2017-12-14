@@ -7,10 +7,11 @@
 
 #define EEPROM_NUM_BYTES 2048
 
-void setAddress(uint16_t address, bool outputEnable) {
-  // sets top bit to 1 iff outputEnable is true. outputEnable puts EEPROM in write mode (when low), or read mode (when high).
-  // it reversed b/c that pin happens to be active low
-  shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, (address >> 8) | (outputEnable ? 0x00 : 0x80));
+void setAddress(uint16_t address, bool readMode) {
+  // set the top bit to low when readMode is true.
+  // that bit controls the output_enable pin on the EEPROM, which is active low.
+  // bring it high for write mode.
+  shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, (address >> 8) | (readMode ? 0x00 : 0x80));
   shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, address); // drops upper top bits, shifts lower byte
 
   // now toggle clock pulse
@@ -24,7 +25,7 @@ byte readEEPROM(uint16_t address) {
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     pinMode(pin, INPUT);
   }
-  setAddress(address, /* outputEnable*/ true); // for reading, b/c outputEnable is active low
+  setAddress(address, /* readMode */ true);
   byte data = 0;
   for (int pin = EEPROM_D7; pin >= EEPROM_D0; --pin) {
     data = (data << 1) + digitalRead(pin);
@@ -37,7 +38,7 @@ void writeEEPROM(uint16_t address, byte data) {
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     pinMode(pin, OUTPUT);
   }
-  setAddress(address, /* outputEnable*/ false);
+  setAddress(address, /* readMode */ false);
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     digitalWrite(pin, data & 1);
     data = data >> 1;
