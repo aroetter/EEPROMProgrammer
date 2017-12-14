@@ -126,12 +126,39 @@ void write7SegmentDecimalDisplayEEPROM() {
   }
 }
 
-// Clears an EEPROM, setting all data to zero. TODO: test this
+
+// Control Line Bits. There are 16 bits that can be control lines
+
+// Clears an EEPROM, setting all data to zero.
 void writeBlankEEPROM() {
   for (int addr = 0; addr < EEPROM_NUM_BYTES; ++addr) {
     writeEEPROM(addr, 0);
   }
 }
+
+
+// Must be exactly 16 b/c we use 4 bits for opcodes
+enum OPCODES {
+  LDA = 0,
+  ADD = 1,
+  OUT = 2,
+  UNUSED3 = 3,
+  UNUSED4 = 4,
+  UNUSED5 = 5,
+  UNUSED6 = 6,
+  UNUSED7 = 7,
+  UNUSED8 = 8,
+  UNUSED9 = 9,
+  UNUSED10 = 10,
+  UNUSED11 = 11,
+  UNUSED12 = 12,
+  UNUSED13 = 13,
+  UNUSED14 = 14,
+  HLT = 15
+};
+
+// 
+
 
 // Set up microcode for out EEPROM, which is addressable via 11 address lines [a10...a0]
 //
@@ -145,18 +172,22 @@ void writeBlankEEPROM() {
 // TOOD: for sanity: set all unused opcode rows to all zeros? 
 void writeMSBMicroCodeControlLogic() {
   
+  Serial.print("Size of int is ");
+  Serial.println(sizeof(int), DEC);
 }
 
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
  * Think of this like main() */
 void setup() {
   doCommonInit();
+  assert(sizeof(int) == 2); // We rely on this elsewhere
 
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
-  write7SegmentDecimalDisplayEEPROM();
+  
+  // write7SegmentDecimalDisplayEEPROM();
   // writeBlankEEPROM();
-  // TODO: writeMSBMicroCodeControlLogic();
+  writeMSBMicroCodeControlLogic();
   // TODO: writeLSBMicroCodeControlLogic();
   Serial.println("Done.");
 
