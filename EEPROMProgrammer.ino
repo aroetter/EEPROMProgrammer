@@ -7,7 +7,7 @@
 
 #define EEPROM_NUM_BYTES 2048
 
-void setAddress(int address, bool outputEnable) {
+void setAddress(uint16_t address, bool outputEnable) {
   // sets top bit to 1 iff outputEnable is true. outputEnable puts EEPROM in write mode (when low), or read mode (when high).
   // it reversed b/c that pin happens to be active low
   shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, (address >> 8) | (outputEnable ? 0x00 : 0x80));
@@ -20,7 +20,7 @@ void setAddress(int address, bool outputEnable) {
 }
 
 // Return the byte found at a specific address
-byte readEEPROM(int address) {
+byte readEEPROM(uint16_t address) {
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     pinMode(pin, INPUT);
   }
@@ -33,7 +33,7 @@ byte readEEPROM(int address) {
 }
 
 // Write the given byte to a specific address
-void writeEEPROM(int address, byte data) {
+void writeEEPROM(uint16_t address, byte data) {
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     pinMode(pin, OUTPUT);
   }
@@ -100,10 +100,10 @@ void write7SegmentDecimalDisplayEEPROM() {
   // program the lower half of the chip, unsigned numbers
   Serial.println("Programming unsigned mode...");
   for (int value = 0; value < 256; ++value) {
-    int zeros_addr = value; // zeroes place address
-    int tens_addr = 256 + value;        // make upper byte 00000001
-    int hundreds_addr = 512 + value;  // make upper byte 00000010
-    int sign_addr = 768 + value; // make upper byte 00000011
+    uint16_t zeros_addr = value; // zeroes place address
+    uint16_t tens_addr = 256 + value;        // make upper byte 00000001
+    uint16_t hundreds_addr = 512 + value;  // make upper byte 00000010
+    uint16_t sign_addr = 768 + value; // make upper byte 00000011
 
     writeEEPROM(zeros_addr, digits[value % 10]);
     writeEEPROM(tens_addr, digits[(value / 10) % 10]);
@@ -114,10 +114,10 @@ void write7SegmentDecimalDisplayEEPROM() {
   // program the upper half of the chip, 2s complement
   Serial.println("Programming 2s complement mode...");
   for(int value = -128; value < 128; ++value) {
-    int zeros_addr = 1024 + (byte) value;
-    int tens_addr = 1280 + (byte) value;
-    int hundreds_addr = 1536 + (byte) value;
-    int sign_addr = 1792 + byte (value);
+    uint16_t zeros_addr = 1024 + (byte) value;
+    uint16_t tens_addr = 1280 + (byte) value;
+    uint16_t hundreds_addr = 1536 + (byte) value;
+    uint16_t sign_addr = 1792 + byte (value);
 
     writeEEPROM(zeros_addr, digits[abs(value) % 10]);
     writeEEPROM(tens_addr,  digits[abs(value / 10) % 10]);
@@ -125,9 +125,6 @@ void write7SegmentDecimalDisplayEEPROM() {
     writeEEPROM(sign_addr, (value < 0) ? 0x01 : 0x00); // 0x01 == the negative sign
   }
 }
-
-
-// Control Line Bits. There are 16 bits that can be control lines
 
 // Clears an EEPROM, setting all data to zero.
 void writeBlankEEPROM() {
@@ -157,8 +154,9 @@ enum OPCODES {
   HLT = 15
 };
 
-// 
 
+// Control Line Bits. There are 16 bits that can be control lines
+// TODO
 
 // Set up microcode for out EEPROM, which is addressable via 11 address lines [a10...a0]
 //
@@ -180,14 +178,13 @@ void writeMSBMicroCodeControlLogic() {
  * Think of this like main() */
 void setup() {
   doCommonInit();
-  assert(sizeof(int) == 2); // We rely on this elsewhere
 
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
   
-  // write7SegmentDecimalDisplayEEPROM();
+  write7SegmentDecimalDisplayEEPROM();
   // writeBlankEEPROM();
-  writeMSBMicroCodeControlLogic();
+  //writeMSBMicroCodeControlLogic();
   // TODO: writeLSBMicroCodeControlLogic();
   Serial.println("Done.");
 
