@@ -133,6 +133,20 @@ void writeBlankEEPROM() {
   }
 }
 
+// Set up microcode for out EEPROM, which is addressable via 11 address lines [a10...a0]
+//
+// Addressing for the microcode is done as follows:
+// a10...a7: unused, always 0.
+// a6....a4: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
+// a3....a0: 4 bits to represent the opcode
+
+// TODO: for sanity: set all microcode steps 5-7 inclusive to all zeros?
+// TODO: for sanity: set all a10-a7 rows with any 1s anywhere in them to all zeros?
+// TOOD: for sanity: set all unused opcode rows to all zeros? 
+void writeMSBMicroCodeControlLogic() {
+  
+}
+
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
  * Think of this like main() */
 void setup() {
