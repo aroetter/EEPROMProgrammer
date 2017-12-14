@@ -221,10 +221,7 @@ void doCommonInit() {
 // a10...a7: unused, always 0.
 // a6....a4: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
 // a3....a0: 4 bits to represent the opcode
-void writeMSBMicroCodeControlLogic() {
-  // Just to be safe, fully erase EEPROM to start.
-  writeBlankEEPROM();
-  
+void writeMSBMicroCodeControlLogic() {  
   // Iterate over every opcode
   // Iterate over every microcode step w/in that opcode
   // Set the fetch instructions, then the custom microcode for each one
@@ -235,6 +232,9 @@ void writeMSBMicroCodeControlLogic() {
 void setup() {
   doCommonInit();
 
+  // Just for safety, fully zero out EEPROM before programming
+  writeBlankEEPROM();
+  
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
   
