@@ -65,17 +65,6 @@ void printContents() {
   
 }
 
-/* Code that is needed regardless of what we're programming */
-void doCommonInit() {
-  pinMode(SHIFT_DATA, OUTPUT);
-  pinMode(SHIFT_CLK, OUTPUT);
-  pinMode(SHIFT_LATCH, OUTPUT);
-  digitalWrite(WRITE_ENABLE, HIGH); // active low
-  pinMode(WRITE_ENABLE, OUTPUT);
-  Serial.begin(57600);
-  
-}
-
 // Program an EEPROM to be used to drive a 3 digit display given a register's contents
 // We have 4 digits, arranged from left to right as:
 // (sign place), (hundreds place), (tens place), (ones place)
@@ -129,35 +118,102 @@ void write7SegmentDecimalDisplayEEPROM() {
 
 // Clears an EEPROM, setting all data to zero.
 void writeBlankEEPROM() {
-  for (int addr = 0; addr < EEPROM_NUM_BYTES; ++addr) {
+  for (uint16_t addr = 0; addr < EEPROM_NUM_BYTES; ++addr) {
     writeEEPROM(addr, 0);
   }
 }
 
+// Control Line Bits. There are 16 bits that can be control lines
+// Left EEPROM control bits
+static uint16_t HALT = 0x8000;
+static uint16_t   MI = 0x4000;
+static uint16_t   RI = 0x2000;
+static uint16_t   RO = 0x1000;
+static uint16_t   IO = 0x0800;
+static uint16_t   II = 0x0400;
+static uint16_t   AI = 0x0200;
+static uint16_t   AO = 0x0100;
+// Right EEPROM control bits
+static uint16_t   SO = 0x0080;
+static uint16_t   SU = 0x0040;
+static uint16_t   BI = 0x0020;
+static uint16_t   OI = 0x0010;
 
-// Must be exactly 16 b/c we use 4 bits for opcodes
-enum OPCODES {
-  LDA = 0,
-  ADD = 1,
-  OUT = 2,
-  UNUSED3 = 3,
-  UNUSED4 = 4,
-  UNUSED5 = 5,
-  UNUSED6 = 6,
-  UNUSED7 = 7,
-  UNUSED8 = 8,
-  UNUSED9 = 9,
-  UNUSED10 = 10,
-  UNUSED11 = 11,
-  UNUSED12 = 12,
-  UNUSED13 = 13,
-  UNUSED14 = 14,
-  HLT = 15
+static uint16_t   CE = 0x0008;
+static uint16_t   CO = 0x0004;
+static uint16_t    J = 0x0002;
+// last line is unused, so no 0x0001 value
+
+// this is changable by moving the reset wire on the 3 bit counter on the control logic breadboard.
+// This only exists here as a sanity check, not used.
+#define NUM_MICROCODE_PER_OPCODE 5
+
+// Every instruction starts with a fetch, so we program that here.
+// Way to read this is:
+// On 1st clock cycle, a fetch sets the CO & MI conrol lines
+// On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
+static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
+
+#define NUM_CUSTOM_MICROCODE_PER_OPCODE 3
+typedef struct MicroCodeDefT {
+  const char* name;
+  uint16_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
+} MicroCodeDefT;
+
+#define NUM_MICROCODES 16 // used to sanity check size of definitional array below
+// This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
+static MicroCodeDefT MICROCODE[] = {
+  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
+  {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
+  {"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
+  {"NUL", {0, 0, 0}}, // opcode binary = 0011
+  {"NUL", {0, 0, 0}}, // opcode binary = 0100
+  {"NUL", {0, 0, 0}}, // opcode binary = 0101
+  {"NUL", {0, 0, 0}}, // opcode binary = 0110
+  {"NUL", {0, 0, 0}}, // opcode binary = 0111
+  {"NUL", {0, 0, 0}}, // opcode binary = 1000
+  {"NUL", {0, 0, 0}}, // opcode binary = 1001
+  {"NUL", {0, 0, 0}}, // opcode binary = 1010
+  {"NUL", {0, 0, 0}}, // opcode binary = 1011
+  {"NUL", {0, 0, 0}}, // opcode binary = 1100
+  {"NUL", {0, 0, 0}}, // opcode binary = 1101
+  {"NUL", {0, 0, 0}}, // opcode binary = 1110
+  {"HLT", {HALT, 0, 0}}, // opcode binary = 1111
 };
 
+/* Code that is needed regardless of what we're programming */
+void doCommonInit() {
+  pinMode(SHIFT_DATA, OUTPUT);
+  pinMode(SHIFT_CLK, OUTPUT);
+  pinMode(SHIFT_LATCH, OUTPUT);
+  digitalWrite(WRITE_ENABLE, HIGH); // active low
+  pinMode(WRITE_ENABLE, OUTPUT);
+  Serial.begin(57600);
 
-// Control Line Bits. There are 16 bits that can be control lines
-// TODO
+  // Sanity check the static microcode definitions
+  // Do we have the right number of microcode definitions?
+  if (NUM_MICROCODES * sizeof(MicroCodeDefT) != sizeof(MICROCODE)) {
+    char buf[100];
+    snprintf(buf, 100, "Must have exactly %d microcodes defined. Instead saw %d. Aborting. Terminating...",
+      NUM_MICROCODES, sizeof(MICROCODE) / sizeof(MicroCodeDefT));
+    Serial.println(buf);
+    Serial.flush();
+    abort();
+  }
+
+  // Does each opcode have the right number of microcode steps?
+  int fetch_microcode_len = sizeof(FETCH_MICROCODE) / sizeof(uint16_t);
+  int per_opcode_microcode_len = sizeof(MICROCODE[0].microcode) / sizeof(uint16_t);
+  if ((per_opcode_microcode_len + fetch_microcode_len) != NUM_MICROCODE_PER_OPCODE) {
+    char buf[100];
+    snprintf(buf, 100, "Each opcode must be = %d microcodes. Fix static data structures. Terminating...",
+      NUM_MICROCODE_PER_OPCODE);
+    Serial.println(buf);
+    Serial.flush();
+    abort();
+  }
+}
+
 
 // Set up microcode for out EEPROM, which is addressable via 11 address lines [a10...a0]
 //
@@ -165,14 +221,13 @@ enum OPCODES {
 // a10...a7: unused, always 0.
 // a6....a4: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
 // a3....a0: 4 bits to represent the opcode
-
-// TODO: for sanity: set all microcode steps 5-7 inclusive to all zeros?
-// TODO: for sanity: set all a10-a7 rows with any 1s anywhere in them to all zeros?
-// TOOD: for sanity: set all unused opcode rows to all zeros? 
 void writeMSBMicroCodeControlLogic() {
+  // Just to be safe, fully erase EEPROM to start.
+  writeBlankEEPROM();
   
-  Serial.print("Size of int is ");
-  Serial.println(sizeof(int), DEC);
+  // Iterate over every opcode
+  // Iterate over every microcode step w/in that opcode
+  // Set the fetch instructions, then the custom microcode for each one
 }
 
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
@@ -183,13 +238,13 @@ void setup() {
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
   
-  write7SegmentDecimalDisplayEEPROM();
+  // write7SegmentDecimalDisplayEEPROM();
   // writeBlankEEPROM();
-  //writeMSBMicroCodeControlLogic();
+  // writeMSBMicroCodeControlLogic();
   // TODO: writeLSBMicroCodeControlLogic();
   Serial.println("Done.");
 
-  printContents();
+  // printContents(); // TODO: put back in.
 }
 
 void loop() {
