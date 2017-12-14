@@ -48,7 +48,6 @@ void writeEEPROM(int address, byte data) {
   delay(5); // msec // works fine for me, but in video needs to be upped to 10.
 }
 
-// print EEPROM contents
 void printContents() {
   Serial.println("------------------------------------------------------");
   for (int base = 0; base < EEPROM_NUM_BYTES; base += 16) {
@@ -77,7 +76,23 @@ void doCommonInit() {
 }
 
 // Program an EEPROM to be used to drive a 3 digit display given a register's contents
-// TODO: document how we are laying out memory in the EEPROM to control the screens.
+// We have 4 digits, arranged from left to right as:
+// (sign place), (hundreds place), (tens place), (ones place)
+// 
+// EEPROM Memory is broken up into 256 address chunks. Each chunk is addressed with an 8-bit number
+// from 0-255. The value stored represents how the given decimal digit display should represent the 8-bit
+// number used to address it (i.e. what segments of the display need to be turned on)
+// e.g. at address 123, we store how to light up the display to make a "3", which is the ones place for 123.
+// We store both signed & unsigned representations of the 8-bit index address.
+// Memory is laid out as follows:
+// [0000...0255]: ones place digit for unsigned decimal representation
+// [0256...0511]: tens place digit     ""              ""
+// [0512...0767]: hundreds place digit ""              ""
+// [0768...1023]: signs place digit (always blank for unsigned numbers)
+// [1024...1279]: ones place digit for signed decimal representation
+// [1280...1535]: tens place digit     ""              ""
+// [1536...1791]: hundreds place digit ""              "" 
+// [1792...2047]: signs place digit (either a negative sign or blank)
 void write7SegmentDecimalDisplayEEPROM() {
   // represent decimal digits 0 ->10 (the 8 bits for a screen display)
   byte digits[] = { 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b};
