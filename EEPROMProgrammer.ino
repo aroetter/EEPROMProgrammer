@@ -162,7 +162,7 @@ static uint16_t    J = 0x0002;
 // On 1st clock cycle, a fetch sets the CO & MI conrol lines
 // On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
 // TODO: put this one back // static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
-static uint16_t FETCH_MICROCODE[] = {HALT | J, MI | CO };
+static uint16_t FETCH_MICROCODE[] = {II | SU, AI | SO };
 
 
 #define NUM_CUSTOM_MICROCODE_PER_OPCODE 3
@@ -177,7 +177,7 @@ typedef struct OpCodeDefT {
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
   // TODO put this one back. //  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
-  {"LDA", {RI|CE, RO|OI, IO|BI}},     // opcode binary = 0000
+  {"LDA", {AO, 0, 0}},     // opcode binary = 0000
 
   //{"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
   //{"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
