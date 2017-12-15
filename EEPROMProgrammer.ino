@@ -111,7 +111,7 @@ void write7SegmentDecimalDisplayEEPROM() {
   }
   
   // program the upper half of the chip, 2s complement
-  Serial.println("Programming 2s complement mode...");
+  Serial.println("Programming signed mode...");
   for(int value = -128; value < 128; ++value) {
     uint16_t zeros_addr = 1024 + (byte) value;
     uint16_t tens_addr = 1280 + (byte) value;
