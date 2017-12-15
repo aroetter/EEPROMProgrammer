@@ -264,8 +264,9 @@ void writeMicroCodeEEPROM(bool leftEEPROM) {
         Serial.println(buf);
         data = mc.microcode[custom_step_to_write];
       }
-      // TODO: now write out either high byte or low byte of data to address addr.
-      
+      // now write the data
+      byte byte_to_write = leftEEPROM ? (data >> 8) : data;
+      writeEEPROM(addr, byte_to_write);
     }
   }
 }
