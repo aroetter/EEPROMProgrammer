@@ -8,6 +8,7 @@
 #define EEPROM_NUM_BYTES 2048
 
 // Given a string in the range [0...15], return a human readable string of that number in binary
+// e.g. passing in 10 returns "1010"
 void convert4BitIntToBinaryString(char out[5], byte val) {
   for(int i = 0; i < 4; ++i) {
     out[3-i] = (val & 1) ? '1' : '0';
