@@ -7,6 +7,15 @@
 
 #define EEPROM_NUM_BYTES 2048
 
+// Given a string in the range [0...15], return a human readable string of that number in binary
+void convert4BitIntToBinaryString(char out[5], byte val) {
+  for(int i = 0; i < 4; ++i) {
+    out[3-i] = (val & 1) ? '1' : '0';
+    val = val >> 1;
+  }
+  out[4] = '\0';
+}
+
 void setAddress(uint16_t address, bool readMode) {
   // set the top bit to low when readMode is true.
   // that bit controls the output_enable pin on the EEPROM, which is active low.
@@ -223,7 +232,8 @@ void doCommonInit() {
 // a10...a7: unused, always 0.
 // a6....a4: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
 // a3....a0: 4 bits to represent the opcode
-void writeMSBMicroCodeControlLogic() {  
+// argument is which EEPROM to write, 8 left bits, or 7 right bits.
+void writeMicroCodeEEPROM(bool leftEEPROM) {  
   const int fetch_microcode_len = sizeof(FETCH_MICROCODE) / sizeof(uint16_t);
   
   // Iterate over every microcode step w/in that opcode
@@ -231,7 +241,9 @@ void writeMSBMicroCodeControlLogic() {
   for(uint8_t i = 0; i < NUM_MICROCODES; ++i) {
     char buf[100];
     MicroCodeDefT mc = MICROCODE[i];
-    snprintf(buf, 100, "Programming opcode %s (binary opcode val = 0x%x)", mc.name, i);
+    char binaryStr[5];
+    convert4BitIntToBinaryString(binaryStr, i);
+    snprintf(buf, 100, "Programming opcode %s (binary opcode = %s)", mc.name, binaryStr);
     Serial.println(buf);
     for(uint8_t step = 0; step < NUM_MICROCODE_PER_OPCODE; ++step) {
       // generate a 16 bit address of form 00000000 0sssoooo
@@ -268,8 +280,7 @@ void setup() {
   Serial.println("Programming EEPROM...");
   // Usage: uncomment the single one of these functions you want to run.
   // write7SegmentDecimalDisplayEEPROM();
-  writeMSBMicroCodeControlLogic();
-  // TODO: writeLSBMicroCodeControlLogic(); // This is probably the above function with an argument.
+  writeMicroCodeEEPROM(true); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
   Serial.println("Done.");
 
   printContents();
