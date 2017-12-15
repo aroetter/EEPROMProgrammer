@@ -126,7 +126,7 @@ void write7SegmentDecimalDisplayEEPROM() {
 }
 
 // Clears an EEPROM, setting all data to zero.
-void writeBlankEEPROM() {
+void eraseEEPROM() {
   for (uint16_t addr = 0; addr < EEPROM_NUM_BYTES; ++addr) {
     writeEEPROM(addr, 0);
   }
@@ -265,6 +265,7 @@ void writeMicroCodeEEPROM(bool leftEEPROM) {
         data = mc.microcode[custom_step_to_write];
       }
       // TODO: now write out either high byte or low byte of data to address addr.
+      
     }
   }
 }
@@ -275,7 +276,7 @@ void setup() {
   doCommonInit();
 
   Serial.println("Erasing EEPROM...");
-  writeBlankEEPROM();
+  eraseEEPROM();
   
   Serial.println("Programming EEPROM...");
   
