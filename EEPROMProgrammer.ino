@@ -274,13 +274,14 @@ void writeMicroCodeEEPROM(bool leftEEPROM) {
 void setup() {
   doCommonInit();
 
-  // Just for safety, fully zero out EEPROM before programming
-  writeBlankEEPROM(); // TODO: put this back in.
+  Serial.println("Erasing EEPROM...");
+  writeBlankEEPROM();
   
   Serial.println("Programming EEPROM...");
+  
   // Usage: uncomment the single one of these functions you want to run.
-  // write7SegmentDecimalDisplayEEPROM();
-  writeMicroCodeEEPROM(true); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
+  write7SegmentDecimalDisplayEEPROM();
+  // writeMicroCodeEEPROM(true); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
   Serial.println("Done.");
 
   printContents();
