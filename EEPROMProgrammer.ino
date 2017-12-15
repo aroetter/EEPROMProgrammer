@@ -161,22 +161,29 @@ static uint16_t    J = 0x0002;
 // Way to read this is:
 // On 1st clock cycle, a fetch sets the CO & MI conrol lines
 // On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
-static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
+// TODO: put this one back // static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
+static uint16_t FETCH_MICROCODE[] = {HALT | J, MI | CO };
+
 
 #define NUM_CUSTOM_MICROCODE_PER_OPCODE 3
-typedef struct MicroCodeDefT {
+typedef struct OpCodeDefT {
   const char* name;
   uint16_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
-} MicroCodeDefT;
+} OpCodeDefT;
 
 // we guarantee, via checking code below, that the following array is this size
-#define NUM_MICROCODES 16 
+#define NUM_OPCODES 16 
 
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
-static MicroCodeDefT MICROCODE[] = {
-  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
-  {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
-  {"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
+static OpCodeDefT OPCODE[] = {
+  // TODO put this one back. //  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
+  {"LDA", {RI|CE, RO|OI, IO|BI}},     // opcode binary = 0000
+
+  //{"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
+  //{"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
+  {"NUL", {0, 0, 0}}, // opcode binary = 0011
+  {"NUL", {0, 0, 0}}, // opcode binary = 0100
+  
   {"NUL", {0, 0, 0}}, // opcode binary = 0011
   {"NUL", {0, 0, 0}}, // opcode binary = 0100
   {"NUL", {0, 0, 0}}, // opcode binary = 0101
@@ -203,10 +210,10 @@ void doCommonInit() {
 
   // Sanity check the static microcode definitions
   // Do we have the right number of microcode definitions?
-  if (NUM_MICROCODES * sizeof(MicroCodeDefT) != sizeof(MICROCODE)) {
+  if (NUM_OPCODES * sizeof(OpCodeDefT) != sizeof(OPCODE)) {
     char buf[100];
     snprintf(buf, 100, "Must have exactly %d microcodes defined. Instead saw %d. Aborting. Terminating...",
-      NUM_MICROCODES, sizeof(MICROCODE) / sizeof(MicroCodeDefT));
+      NUM_OPCODES, sizeof(OPCODE) / sizeof(OpCodeDefT));
     Serial.println(buf);
     Serial.flush();
     abort();
@@ -214,7 +221,7 @@ void doCommonInit() {
 
   // Does each opcode have the right number of microcode steps?
   int fetch_microcode_len = sizeof(FETCH_MICROCODE) / sizeof(uint16_t);
-  int per_opcode_microcode_len = sizeof(MICROCODE[0].microcode) / sizeof(uint16_t);
+  int per_opcode_microcode_len = sizeof(OPCODE[0].microcode) / sizeof(uint16_t);
   if ((per_opcode_microcode_len + fetch_microcode_len) != NUM_MICROCODE_PER_OPCODE) {
     char buf[100];
     snprintf(buf, 100, "Each opcode must be = %d microcodes. Fix static data structures. Terminating...",
@@ -230,28 +237,27 @@ void doCommonInit() {
 //
 // Addressing for the microcode is done as follows:
 // a10...a7: unused, always 0.
-// a6....a4: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
-// a3....a0: 4 bits to represent the opcode
+// a6....a3: 4 bits to represent the opcode
+// a2....a0: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
+
 // argument is which EEPROM to write, 8 left bits, or 7 right bits.
 void writeMicroCodeEEPROM(bool leftEEPROM) {  
   const int fetch_microcode_len = sizeof(FETCH_MICROCODE) / sizeof(uint16_t);
   
   // Iterate over every microcode step w/in that opcode
   // Set the fetch instructions, then the custom microcode for each one
-  for(uint8_t i = 0; i < NUM_MICROCODES; ++i) {
+  for(uint8_t i = 0; i < NUM_OPCODES; ++i) {
     char buf[100];
-    MicroCodeDefT mc = MICROCODE[i];
+    OpCodeDefT mc = OPCODE[i];
     char binaryStr[5];
     convert4BitIntToBinaryString(binaryStr, i);
     snprintf(buf, 100, "Programming opcode %s (binary opcode = %s)", mc.name, binaryStr);
     Serial.println(buf);
     for(uint8_t step = 0; step < NUM_MICROCODE_PER_OPCODE; ++step) {
-      // generate a 16 bit address of form 00000000 0sssoooo
-      // where sss is the 3 bit step. oooo is the 4 bit opcode
+      // generate a 16 bit address of form 00000000 0oooosss
+      // where oooo is the 4 bit opcode, and sss is the 3 bit step
       // top 5 bits are unused, EEPROM uses 11 lower bits for address only
-      // should yield a 16 bit value 00000000 0sssoooo where sss is the 3 bit step,
-      // oooo is the 4 bit opcode
-      uint16_t addr = (step << 4) | i;
+      uint16_t addr = (i << 3) | step; 
       // write either the fetch steps, or the custom control logic for the opcode
       uint16_t data;
       if (step < fetch_microcode_len) {
@@ -282,8 +288,8 @@ void setup() {
   Serial.println("Programming EEPROM...");
   
   // Usage: uncomment the single one of these functions you want to run.
-  write7SegmentDecimalDisplayEEPROM();
-  // writeMicroCodeEEPROM(true); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
+  // write7SegmentDecimalDisplayEEPROM();
+  writeMicroCodeEEPROM(true); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
   Serial.println("Done.");
 
   printContents();
