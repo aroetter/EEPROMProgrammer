@@ -161,9 +161,7 @@ static uint16_t    J = 0x0002;
 // Way to read this is:
 // On 1st clock cycle, a fetch sets the CO & MI conrol lines
 // On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
-// TODO: put this one back // static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
-static uint16_t FETCH_MICROCODE[] = {II | SU, AI | SO };
-
+static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
 
 #define NUM_CUSTOM_MICROCODE_PER_OPCODE 3
 typedef struct OpCodeDefT {
@@ -176,26 +174,24 @@ typedef struct OpCodeDefT {
 
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
-  // TODO put this one back. //  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
-  {"LDA", {AO, 0, 0}},     // opcode binary = 0000
-
-  //{"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
-  //{"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
+  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
+  {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
+  {"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
   {"NUL", {0, 0, 0}}, // opcode binary = 0011
-  {"NUL", {0, 0, 0}}, // opcode binary = 0100
   
-  {"NUL", {0, 0, 0}}, // opcode binary = 0011
-  {"NUL", {0, 0, 0}}, // opcode binary = 0100
-  {"NUL", {0, 0, 0}}, // opcode binary = 0101
-  {"NUL", {0, 0, 0}}, // opcode binary = 0110
-  {"NUL", {0, 0, 0}}, // opcode binary = 0111
-  {"NUL", {0, 0, 0}}, // opcode binary = 1000
-  {"NUL", {0, 0, 0}}, // opcode binary = 1001
-  {"NUL", {0, 0, 0}}, // opcode binary = 1010
-  {"NUL", {0, 0, 0}}, // opcode binary = 1011
-  {"NUL", {0, 0, 0}}, // opcode binary = 1100
-  {"NUL", {0, 0, 0}}, // opcode binary = 1101
-  {"NUL", {0, 0, 0}}, // opcode binary = 1110
+  {"NUL", {0, 0, 0}},    // opcode binary = 0100
+  {"NUL", {0, 0, 0}},    // opcode binary = 0101
+  {"NUL", {0, 0, 0}},    // opcode binary = 0110
+  {"NUL", {0, 0, 0}},    // opcode binary = 0111
+  
+  {"NUL", {0, 0, 0}},    // opcode binary = 1000
+  {"NUL", {0, 0, 0}},    // opcode binary = 1001
+  {"NUL", {0, 0, 0}},    // opcode binary = 1010
+  {"NUL", {0, 0, 0}},    // opcode binary = 1011
+  
+  {"NUL", {0, 0, 0}},    // opcode binary = 1100
+  {"NUL", {0, 0, 0}},    // opcode binary = 1101
+  {"NUL", {0, 0, 0}},    // opcode binary = 1110
   {"HLT", {HALT, 0, 0}}, // opcode binary = 1111
 };
 
