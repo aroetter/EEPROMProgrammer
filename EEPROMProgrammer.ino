@@ -175,10 +175,10 @@ typedef struct OpCodeDefT {
 
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
-  {"HLT", {HALT, 0, 0}},          // opcode binary = 0000
+  {"HLT", {HALT, 0, 0}},          // opcode binary = 0000 //TODO: do we want 0000 to be halt?
   {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0001
   {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0010
-  {"OUT", {AO|OI, 0, 0}},         // opcode binary = 0011
+  {"NUL", {0, 0, 0}},             // opcode binary = 0011
 
   {"NUL", {0, 0, 0}}, // opcode binary = 0100
   {"NUL", {0, 0, 0}},    // opcode binary = 0101
@@ -192,7 +192,8 @@ static OpCodeDefT OPCODE[] = {
   
   {"NUL", {0, 0, 0}},    // opcode binary = 1100
   {"NUL", {0, 0, 0}},    // opcode binary = 1101
-  {"NUL", {0, 0, 0}},    // opcode binary = 1110
+  {"OUT", {AO|OI, 0, 0}},// opcode binary = 1110
+
   {"NUL", {0, 0, 0}},    // opcode binary = 1111
 };
 
