@@ -175,12 +175,12 @@ typedef struct OpCodeDefT {
 
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
-  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0000
-  {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0001
-  {"OUT", {AO|OI, 0, 0}},         // opcode binary = 0010
-  {"NUL", {0, 0, 0}}, // opcode binary = 0011
-  
-  {"NUL", {0, 0, 0}},    // opcode binary = 0100
+  {"HLT", {HALT, 0, 0}},          // opcode binary = 0000
+  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0001
+  {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0010
+  {"OUT", {AO|OI, 0, 0}},         // opcode binary = 0011
+
+  {"NUL", {0, 0, 0}}, // opcode binary = 0100
   {"NUL", {0, 0, 0}},    // opcode binary = 0101
   {"NUL", {0, 0, 0}},    // opcode binary = 0110
   {"NUL", {0, 0, 0}},    // opcode binary = 0111
@@ -193,7 +193,7 @@ static OpCodeDefT OPCODE[] = {
   {"NUL", {0, 0, 0}},    // opcode binary = 1100
   {"NUL", {0, 0, 0}},    // opcode binary = 1101
   {"NUL", {0, 0, 0}},    // opcode binary = 1110
-  {"HLT", {HALT, 0, 0}}, // opcode binary = 1111
+  {"NUL", {0, 0, 0}},    // opcode binary = 1111
 };
 
 /* Code that is needed regardless of what we're programming */
@@ -286,7 +286,7 @@ void setup() {
   
   // Usage: uncomment the single one of these functions you want to run.
   // write7SegmentDecimalDisplayEEPROM();
-  writeMicroCodeEEPROM(true); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
+  writeMicroCodeEEPROM(false); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
   Serial.println("Done.");
 
   printContents();
