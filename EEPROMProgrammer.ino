@@ -193,7 +193,7 @@ static OpCodeDefT OPCODE[] = {
   {"NUL", {0, 0, 0}},     // opcode binary = 1100
   {"NUL", {0, 0, 0}},     // opcode binary = 1101
   {"OUT", {AO|OI, 0, 0}}, // opcode binary = 1110
-  {"HLT", {HALT, 0, 0}},  // opcode binary = 1111 //TODO: test this.
+  {"HLT", {HALT, 0, 0}},  // opcode binary = 1111
 };
 
 /* Code that is needed regardless of what we're programming */
