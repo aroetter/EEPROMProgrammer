@@ -182,6 +182,7 @@ typedef struct OpCodeDefT {
  */
 
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
+// TODO: add SUB command and write program from 30:05 of video
 static OpCodeDefT OPCODE[] = {
   {"NUL", {0, 0, 0}},             // opcode binary = 0000
   {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0001
@@ -241,12 +242,11 @@ void doCommonInit() {
 // Set up microcode for out EEPROM, which is addressable via 11 address lines [a10...a0]
 //
 // Addressing for the microcode is done as follows:
-// a10...a7: unused, always 0.
+// a10...a8: unused, always 0.
+// a7: which EEPROM. 0 for left, 1 for right EEPROM
 // a6....a3: 4 bits to represent the opcode
 // a2....a0: 3 bits to represent the microcode step we are on (only 0-4 used though we could extend to 0-7)
-
-// argument is which EEPROM to write, 8 left bits, or 7 right bits.
-void writeMicroCodeEEPROM(bool leftEEPROM) {  
+void writeMicroCodeEEPROM() {  
   const int fetch_microcode_len = sizeof(FETCH_MICROCODE) / sizeof(uint16_t);
   
   // Iterate over every microcode step w/in that opcode
@@ -259,7 +259,8 @@ void writeMicroCodeEEPROM(bool leftEEPROM) {
     snprintf(buf, 100, "Programming opcode %s (binary opcode = %s)", mc.name, binaryStr);
     Serial.println(buf);
     for(uint8_t step = 0; step < NUM_MICROCODE_PER_OPCODE; ++step) {
-      // generate a 16 bit address of form 00000000 0oooosss
+      // generate a 16 bit address of form 00000000 woooosss
+      // w is which EEPROM (0 for left, 1 for right).
       // where oooo is the 4 bit opcode, and sss is the 3 bit step
       // top 5 bits are unused, EEPROM uses 11 lower bits for address only
       uint16_t addr = (i << 3) | step; 
@@ -271,13 +272,12 @@ void writeMicroCodeEEPROM(bool leftEEPROM) {
         data = FETCH_MICROCODE[step];
       } else {
         int custom_step_to_write = step - fetch_microcode_len;
-        snprintf(buf, 1000, "  Step=%d... writing custom control logic step %d.", step, custom_step_to_write);
-        Serial.println(buf);
         data = mc.microcode[custom_step_to_write];
       }
       // now write the data
-      byte byte_to_write = leftEEPROM ? (data >> 8) : data;
-      writeEEPROM(addr, byte_to_write);
+      writeEEPROM(addr, data >> 8 /* write upper 8 bits */);
+      addr |= 0x0080; // set the bit called 'w' above
+      writeEEPROM(addr, data /* write lower 8 bits */);
     }
   }
 }
@@ -294,7 +294,7 @@ void setup() {
   
   // Usage: uncomment the single one of these functions you want to run.
   // write7SegmentDecimalDisplayEEPROM();
-  writeMicroCodeEEPROM(false); // true == left EEPROM (MSBs), false == right EEPROM (LSBs)
+  writeMicroCodeEEPROM();
   Serial.println("Done.");
 
   printContents();
