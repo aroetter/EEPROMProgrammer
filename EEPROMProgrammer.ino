@@ -305,13 +305,11 @@ void writeMicroCodeEEPROM() {
       // write either the fetch steps, or the custom control logic for the opcode
       uint16_t data;
       if (step < fetch_microcode_len) {
-        snprintf(buf, 100, "  Step=%d... writing fetch instruction.", step);
-        Serial.println(buf);
         data = FETCH_MICROCODE[step];
       } else {
-        int custom_step_to_write = step - fetch_microcode_len;
-        data = mc.microcode[custom_step_to_write];
+        data = mc.microcode[step - fetch_microcode_len];
       }
+
       // now write the data
       writeEEPROM(addr, data >> 8 /* write upper 8 bits */);
       addr |= 0x0080; // set the bit called 'w' above
