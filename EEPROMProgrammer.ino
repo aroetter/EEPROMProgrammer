@@ -173,6 +173,14 @@ typedef struct OpCodeDefT {
 // we guarantee, via checking code below, that the following array is this size
 #define NUM_OPCODES 16 
 
+/* TODO: want to very explicitly get the symbolic assembly instruction --> 4 bit opcode mapping
+ *  do that by defining an enum in the order you want { NUL = 0, LDA = 1, ADD = 2, etc. }
+ *  then initialize the below array in a function, not statically, as in:
+ *  OPCODE[LDA] = { "ADD", {IO|MI, RO|AI, 0}}
+ *  etc.
+ *  Then call that initializer in the one off setup function
+ */
+
 // This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
   {"NUL", {0, 0, 0}},             // opcode binary = 0000
