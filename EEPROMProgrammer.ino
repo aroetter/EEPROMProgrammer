@@ -1,3 +1,4 @@
+// define which pins are what for IO
 #define SHIFT_DATA    2
 #define SHIFT_CLK     3
 #define SHIFT_LATCH   4
@@ -128,9 +129,14 @@ void write7SegmentDecimalDisplayEEPROM() {
 
 // Clears an EEPROM, setting all data to zero.
 void eraseEEPROM() {
+  Serial.print("Erasing EEPROM");
   for (uint16_t addr = 0; addr < EEPROM_NUM_BYTES; ++addr) {
     writeEEPROM(addr, 0);
+    if (0 == addr % (EEPROM_NUM_BYTES / 16)) {
+      Serial.print(".");
+    }
   }
+  Serial.println("done.");
 }
 
 // Control Line Bits. There are 16 bits that can be control lines
@@ -154,8 +160,9 @@ static uint16_t   CO = 0x0004;
 static uint16_t    J = 0x0002;
 // last line is unused, so no 0x0001 value
 
-// this is changable by moving the reset wire on the 3 bit counter on the control logic breadboard.
-// This only exists here as a sanity check, not used.
+// This is changable by moving the reset wire on the 3 bit counter on the control
+// logic breadboard. This only exists here as a sanity check to enforce consistency
+// with other datastructures below.
 #define NUM_MICROCODE_PER_OPCODE 5
 
 // Every instruction starts with a fetch, so we program that here.
@@ -164,45 +171,67 @@ static uint16_t    J = 0x0002;
 // On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
 static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
 
+// must be == (NUM_MICROCODE_PER_OPCODE - len(FETCH_MICROCODE).
+// will fail initialization checks if not
 #define NUM_CUSTOM_MICROCODE_PER_OPCODE 3
+
+// we guarantee, via checking code below, that the following array is this size
+#define NUM_OPCODES 16
+
+// Define the symbolic assembler instruction name to binary opcode mapping here.
+// We use these to write programs. These must be consecutive and in-order in
+// the OpCodeDefT array below (this is checked at init time).
+enum OpCodeName {
+  NOP = 0b0000,
+  LDA = 0b0001,
+  ADD = 0b0010,
+  SUB = 0b0011,
+
+  NUL1 = 0b0100,
+  NUL2 = 0b0101,
+  NUL3 = 0b0110,
+  NUL4 = 0b0111,
+
+  NUL5 = 0b1000,
+  NUL6 = 0b1001,
+  NUL7 = 0b1010,
+  NUL8 = 0b1011,
+
+  NUL9 = 0b1100,
+  NULA = 0b1101,
+  OUT =  0b1110,
+  HLT =  0b1111,
+};
+
 typedef struct OpCodeDefT {
-  const char* name;
+  const char* name; // TODO: delete this field I think
+  OpCodeName opcode;
   uint16_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
 } OpCodeDefT;
 
-// we guarantee, via checking code below, that the following array is this size
-#define NUM_OPCODES 16 
 
-/* TODO: want to very explicitly get the symbolic assembly instruction --> 4 bit opcode mapping
- *  do that by defining an enum in the order you want { NUL = 0, LDA = 1, ADD = 2, etc. }
- *  then initialize the below array in a function, not statically, as in:
- *  OPCODE[LDA] = { "ADD", {IO|MI, RO|AI, 0}}
- *  etc.
- *  Then call that initializer in the one off setup function
- */
 
-// This defines what control lines are set, in order, for each opcode. unused steps are set to 0.
-// TODO: add SUB command and write program from 30:05 of video
+// This defines what microcode runs for ecah opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
-  {"NUL", {0, 0, 0}},             // opcode binary = 0000
-  {"LDA", {IO|MI, RO|AI, 0}},     // opcode binary = 0001
-  {"ADD", {IO|MI, RO|BI, SO|AI}}, // opcode binary = 0010
-  {"NUL", {0, 0, 0}},             // opcode binary = 0011
+  {"NUL", NOP,  {0, 0, 0}},
+  {"LDA", LDA,  {IO|MI, RO|AI, 0}},
+  {"ADD", ADD,  {IO|MI, RO|BI, SO|AI}},
+  {"NUL", SUB,  {IO|MI, RO|BI, SO|AI|SU}},
 
-  {"NUL", {0, 0, 0}},     // opcode binary = 0100
-  {"NUL", {0, 0, 0}},     // opcode binary = 0101
-  {"NUL", {0, 0, 0}},     // opcode binary = 0110
-  {"NUL", {0, 0, 0}},     // opcode binary = 0111
+  {"NUL", NUL1, {0, 0, 0}},
+  {"NUL", NUL2, {0, 0, 0}},
+  {"NUL", NUL3, {0, 0, 0}},
+  {"NUL", NUL4, {0, 0, 0}},
   
-  {"NUL", {0, 0, 0}},     // opcode binary = 1000
-  {"NUL", {0, 0, 0}},     // opcode binary = 1001
-  {"NUL", {0, 0, 0}},     // opcode binary = 1010
-  {"NUL", {0, 0, 0}},     // opcode binary = 1011
+  {"NUL", NUL5, {0, 0, 0}},
+  {"NUL", NUL6, {0, 0, 0}},
+  {"NUL", NUL7, {0, 0, 0}},
+  {"NUL", NUL8, {0, 0, 0}},
   
-  {"NUL", {0, 0, 0}},     // opcode binary = 1100
-  {"NUL", {0, 0, 0}},     // opcode binary = 1101
-  {"OUT", {AO|OI, 0, 0}}, // opcode binary = 1110
-  {"HLT", {HALT, 0, 0}},  // opcode binary = 1111
+  {"NUL", NUL9, {0, 0, 0}},
+  {"NUL", NULA, {0, 0, 0}},
+  {"OUT", OUT,  {AO|OI, 0, 0}},
+  {"HLT", HLT,  {HALT, 0, 0}},
 };
 
 /* Code that is needed regardless of what we're programming */
@@ -235,6 +264,15 @@ void doCommonInit() {
     Serial.println(buf);
     Serial.flush();
     abort();
+  }
+
+  // make sure each opcode is defined in order with a consecutive binary value
+  for (int i = 0; i < NUM_OPCODES; ++i) {
+    if (OPCODE[i].opcode != i) {
+      Serial.println("Each opcode must have a consecutive, increasing, binary value!");
+      Serial.flush();
+      abort();
+    }
   }
 }
 
@@ -287,7 +325,6 @@ void writeMicroCodeEEPROM() {
 void setup() {
   doCommonInit();
 
-  Serial.println("Erasing EEPROM...");
   eraseEEPROM();
   
   Serial.println("Programming EEPROM...");
