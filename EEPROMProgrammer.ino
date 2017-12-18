@@ -183,13 +183,13 @@ static uint16_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
 // the OpCodeDefT array below (this is checked at init time).
 enum OpCodeName {
   NOP = 0b0000,
-  LDA = 0b0001,
-  ADD = 0b0010,
-  SUB = 0b0011,
+  LDA = 0b0001, // Load A (write from RAM into A)
+  ADD = 0b0010, // Add value from ram with A register, store result back in A
+  SUB = 0b0011, // Subtract value from ram from A register, store result back in A
 
-  NUL1 = 0b0100,
-  NUL2 = 0b0101,
-  NUL3 = 0b0110,
+  STA = 0b0100, // Store A (write from A -> RAM)
+  LDI = 0b0101, // Load Immediate (into A)
+  JMP = 0b0110, // Jump
   NUL4 = 0b0111,
 
   NUL5 = 0b1000,
@@ -218,9 +218,9 @@ static OpCodeDefT OPCODE[] = {
   {"ADD", ADD,  {IO|MI, RO|BI, SO|AI}},
   {"NUL", SUB,  {IO|MI, RO|BI, SO|AI|SU}},
 
-  {"NUL", NUL1, {0, 0, 0}},
-  {"NUL", NUL2, {0, 0, 0}},
-  {"NUL", NUL3, {0, 0, 0}},
+  {"STA", STA, {IO|MI, AO|RI, 0}},
+  {"LDI", LDI, {IO|AI, 0, 0}},
+  {"JMP", JMP, {IO|J, 0, 0}},
   {"NUL", NUL4, {0, 0, 0}},
   
   {"NUL", NUL5, {0, 0, 0}},
