@@ -204,7 +204,7 @@ enum OpCodeName {
 };
 
 typedef struct OpCodeDefT {
-  const char* name; // TODO: delete this field I think
+  const char* name; // TODO: delete this field I think. TODO
   OpCodeName opcode;
   uint16_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
 } OpCodeDefT;
