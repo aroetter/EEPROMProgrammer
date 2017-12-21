@@ -141,24 +141,25 @@ void eraseEEPROM() {
 
 // Control Line Bits. There are 16 bits that can be control lines
 // Left EEPROM control bits
-static uint16_t HALT = 0x8000;
-static uint16_t   MI = 0x4000;
-static uint16_t   RI = 0x2000;
-static uint16_t   RO = 0x1000;
-static uint16_t   IO = 0x0800;
-static uint16_t   II = 0x0400;
-static uint16_t   AI = 0x0200;
-static uint16_t   AO = 0x0100;
-// Right EEPROM control bits
-static uint16_t   SO = 0x0080;
-static uint16_t   SU = 0x0040;
-static uint16_t   BI = 0x0020;
-static uint16_t   OI = 0x0010;
+static uint16_t HALT = 0x8000; // Clock - Stop the clock
+static uint16_t   MI = 0x4000; // Memory Address Register - Input from Bus
+static uint16_t   RI = 0x2000; // RAM - Input from Bus
+static uint16_t   RO = 0x1000; // RAM - Output to Bus
+static uint16_t   IO = 0x0800; // Instruction Register - Output to Bus
+static uint16_t   II = 0x0400; // Instruction Register - Input from Bus
+static uint16_t   AI = 0x0200; // A Register - Input from Bus
+static uint16_t   AO = 0x0100; // A Register - Output to Bus
 
-static uint16_t   CE = 0x0008;
-static uint16_t   CO = 0x0004;
-static uint16_t    J = 0x0002;
-// last line is unused, so no 0x0001 value
+// Right EEPROM control bits
+static uint16_t   SO = 0x0080; // ALU - Output Sum to Bus
+static uint16_t   SU = 0x0040; // ALU - Subtract mode (vs. Add otherwise)
+static uint16_t   BI = 0x0020; // B Register - Input from Bus
+static uint16_t   OI = 0x0010; // Output (LCD) Register - Input from Bus
+
+static uint16_t   CE = 0x0008; // Program Counter - Counter Enable: PC will increment on each clock
+static uint16_t   CO = 0x0004; // Program Counter - Output to Bus
+static uint16_t    J = 0x0002; // Program Counter - Jump: Input from Bus
+static uint16_t   HO = 0x0001; // Stored Program ("Hard Drive") EEPROM: Output to Bus
 
 // This is changable by moving the reset wire on the 3 bit counter on the control
 // logic breadboard. This only exists here as a sanity check to enforce consistency
