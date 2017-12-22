@@ -354,9 +354,9 @@ void writeMicroCodeEEPROM() {
   };
   
   if ((sizeof(LOAD_PROG_MICROCODE) / sizeof(LOAD_PROG_MICROCODE[0])) != LOAD_PROG_MICROCODE_LEN) {
-      Serial.println("Wrong sized 'Load Program from EEPROM' microcode definition!");
-      Serial.flush();
-      abort();
+    Serial.println("Wrong sized 'Load Program from EEPROM' microcode definition!");
+    Serial.flush();
+    abort();
   }
   
   uint16_t addr = 0x200; // set a9.
