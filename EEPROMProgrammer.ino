@@ -343,10 +343,12 @@ void writeMicroCodeEEPROM() {
   // TODO: hardcode program in a static array
   // TODO: check compiler enforces this as 64.
   static int LOAD_PROG_MICROCODE_LEN = 64;
-  // TODO: write this program, basically 2 microcodeinstructions repeated 16 times, then cleanup.
+  static uint32_t STEP1 = CO|MI, STEP2 = HO|RI|CE;
   static uint32_t LOAD_PROG_MICROCODE[] = {
-    CO|MI, HO|RI|CE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
+    STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
+    STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
+    STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
     HALT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 
   };
