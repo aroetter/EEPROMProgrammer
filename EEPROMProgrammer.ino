@@ -174,7 +174,7 @@ static uint32_t   X0 = 0x00000080; // Input Register X - Write to Bus
 // On 1st clock cycle, a fetch sets the CO & MI conrol lines
 // On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
 static uint32_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
-static int FETCH_MICROCODE_LEN = sizeof(FETCH_MICROCODE) / FETCH_MICROCODE[0];
+static int FETCH_MICROCODE_LEN = sizeof(FETCH_MICROCODE) / sizeof(FETCH_MICROCODE[0]);
 
 // must be == (NUM_MICROCODE_PER_OPCODE - FETCH_MICROCODE_LEN).
 // will fail initialization checks if not
@@ -369,9 +369,9 @@ void writeMicroCodeEEPROM() {
 void writeStoredProgramEEPROM() {
   // Note addressing here is mutually exclusive with microcodeEEPROM, meaning we can load a single
   // physical chip with both sets of data
-  // addressing for 11 address bits is
+  // the addressing for 11 address bits is
   // a10: 1 (meaning we are in the stored program EEPROM, as opposed to microcode EEPROMs).
-  // a9-a8-a7-a6: unused, always 0.
+  // a9-a8-a7: unused, always 0.
   // a6-a5-a4: with program are we loading into RAM (0-7)
   // a3-a2-a1-a0: which assembly language instruction are we at for this program (0-15)
 }
