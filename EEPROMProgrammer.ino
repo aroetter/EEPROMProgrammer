@@ -8,6 +8,9 @@
 
 #define EEPROM_NUM_BYTES 2048
 
+// TODO: test that i can set control line bits for H0
+// TODO: test that i can set control line bits for right EEPROM when i add them
+
 // Given a string in the range [0...15], return a human readable string of that number in binary
 // e.g. passing in 10 returns "1010"
 void convert4BitIntToBinaryString(char out[5], byte val) {
