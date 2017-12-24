@@ -8,9 +8,6 @@
 
 #define EEPROM_NUM_BYTES 2048
 
-// TODO: test that i can set control line bits for H0
-// TODO: test that i can set control line bits for right EEPROM when i add them
-
 // Given a string in the range [0...15], return a human readable string of that number in binary
 // e.g. passing in 10 returns "1010"
 void convert4BitIntToBinaryString(char out[5], byte val) {
@@ -213,7 +210,7 @@ enum OpCodeName {
 };
 
 typedef struct OpCodeDefT {
-  const char* name; // TODO: delete this field I think. TODO
+  const char* name; // TODO: delete this field I think.
   OpCodeName opcode;
   uint32_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
 } OpCodeDefT;
@@ -362,7 +359,6 @@ void writeMicroCodeEEPROM() {
   }
   
   uint16_t addr = 0x200; // set a9.
-  // TODO: make i an int
   for (byte i = 0; i < LOAD_PROG_MICROCODE_LEN; ++i) {
     write24BitControlWordToEEPROMs(addr | i, LOAD_PROG_MICROCODE[i]);
   }
@@ -382,8 +378,18 @@ static byte STORED_PROGRAMS[] = {
   JMP | 3,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
-  // Program #2 (010): NAME
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // Program #2 (010): Fibonacci
+  LDI | 0,
+  STA | 15,
+  LDI | 1,
+  OUT,
+  STA | 14,
+  ADD | 15,
+  STA | 15,
+  OUT,
+  ADD | 14,
+  JMP | 3,
+  0, 0, 0, 0, 0, 0,
   // Program #3 (011): NAME
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   // Program #4 (100): NAME
