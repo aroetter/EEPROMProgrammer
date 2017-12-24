@@ -191,25 +191,25 @@ static int FETCH_MICROCODE_LEN = sizeof(FETCH_MICROCODE) / sizeof(FETCH_MICROCOD
 // at zero, and in the same order as the OpCodeDefT OPCODE[] array below
 // (this is checked at init time).
 enum OpCodeName {
-  NOP = 0b0000,
-  LDA = 0b0001, // Load A (write from RAM into A)
-  ADD = 0b0010, // Add value from ram with A register, store result back in A
-  SUB = 0b0011, // Subtract value from ram from A register, store result back in A
+  NOP =   0 << 4, // 0000: Do nothing,
+  LDA =   1 << 4, // 0001: Load A (write from RAM into A)
+  ADD =   2 << 4, // 0010: Add value from ram with A register, store result back in A
+  SUB =   3 << 4, // 0011: Subtract value from ram from A register, store result back in A
 
-  STA = 0b0100, // Store A (write from A -> RAM)
-  LDI = 0b0101, // Load Immediate (into A)
-  JMP = 0b0110, // Jump
-  NUL4 = 0b0111,
+  STA =   4 << 4, // 0100: // Store A (write from A -> RAM)
+  LDI =   5 << 4, // 0101: Load Immediate (into A)
+  JMP =   6 << 4, // 0110: Jump
+  NUL4 =  7 << 4, // 0111: Unused
 
-  NUL5 = 0b1000,
-  NUL6 = 0b1001,
-  NUL7 = 0b1010,
-  NUL8 = 0b1011,
+  NUL5 =  8 << 4, // 1000: Unused
+  NUL6 =  9 << 4, // 1001: Unused
+  NUL7 = 10 << 4, // 1010: Unused
+  NUL8 = 11 << 4, // 1011: Unused
 
-  NUL9 = 0b1100,
-  NULA = 0b1101,
-  OUT =  0b1110,
-  HLT =  0b1111,
+  NUL9 = 12 << 4, // 1100: Unused
+  NULA = 13 << 4, // 1101: Unused
+  OUT  = 14 << 4, // 1110: Output register A to output register (LCD display)
+  HLT  = 15 << 4  // 1111: Halt the computer by stopping the clock
 };
 
 typedef struct OpCodeDefT {
@@ -273,8 +273,9 @@ void doCommonInit() {
 
   // make sure each opcode is defined in order with a consecutive binary value
   for (int i = 0; i < NUM_OPCODES; ++i) {
-    if (OPCODE[i].opcode != i) {
-      Serial.println("Each opcode must have a consecutive and increasing, binary value!");
+    byte expected_opcode = (i << 4);
+    if (OPCODE[i].opcode != expected_opcode) {
+      Serial.println("Each opcode must have a consecutive and increasing MSB.");
       Serial.flush();
       abort();
     }
@@ -343,8 +344,6 @@ void writeMicroCodeEEPROM() {
 
   // Now write out the microcode instructions for the "Load program from another EEPROM into RAM"
   Serial.println("Programming microcode to load stored program from another EEPROM into RAM.");
-  // TODO: hardcode program in a static array
-  // TODO: check compiler enforces this as 64.
   static int LOAD_PROG_MICROCODE_LEN = 64;
   static uint32_t STEP1 = CO|MI, STEP2 = HO|RI|CE;
   static uint32_t LOAD_PROG_MICROCODE[] = {
@@ -363,12 +362,43 @@ void writeMicroCodeEEPROM() {
   }
   
   uint16_t addr = 0x200; // set a9.
+  // TODO: make i an int
   for (byte i = 0; i < LOAD_PROG_MICROCODE_LEN; ++i) {
     write24BitControlWordToEEPROMs(addr | i, LOAD_PROG_MICROCODE[i]);
   }
 }
 
-// TODO: implement this
+// Hard-code 8 16 byte programs here.
+static byte STORED_PROGRAMS[] = {
+  // Program #0 (000): Dummy just to see if memory is loading properly. Increments each bit in order
+  0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 
+
+  // Program #1 (001): Add by 3
+  LDI | 3, // Read this as assembly "LDI 3"
+  STA | 15,
+  LDI | 0,
+  ADD | 15,
+  OUT,
+  JMP | 3,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+
+  // Program #2 (010): NAME
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // Program #3 (011): NAME
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // Program #4 (100): NAME
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  // Program #5 (101): NAME
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  // Program #6 (110): NAME
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // Program #7 (111): NAME
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+
+// Write out the EEPROM that is used as 'cold-storage' for programs/RAM contents.
+// This can be loaded by the above microcode into memory right on power up.
 void writeStoredProgramEEPROM() {
   // Note addressing here is mutually exclusive with microcodeEEPROM, meaning we can load a single
   // physical chip with both sets of data
@@ -377,6 +407,18 @@ void writeStoredProgramEEPROM() {
   // a9-a8-a7: unused, always 0.
   // a6-a5-a4: with program are we loading into RAM (0-7)
   // a3-a2-a1-a0: which assembly language instruction are we at for this program (0-15)
+
+  int stored_programs_size = sizeof(STORED_PROGRAMS) / sizeof(STORED_PROGRAMS[0]);  
+  if (stored_programs_size != (8 * 16)) {
+    Serial.println("Must have 8 stored programs of exactly 16 bytes each.!");
+    Serial.flush();
+    abort();
+  }
+
+  uint16_t base_addr = 0x400; // set a10.
+  for (uint16_t i = 0; i < stored_programs_size; ++i) {
+    writeEEPROM(base_addr + i, STORED_PROGRAMS[i]);
+  }
 }
 
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
@@ -387,10 +429,15 @@ void setup() {
   eraseEEPROM();
   
   Serial.println("Programming EEPROM...");
-  
-  // Usage: uncomment the single one of these functions you want to run.
+
+  // Usage: Do one of these 2 blocks
+  // Block 1: LCD displays
   // write7SegmentDecimalDisplayEEPROM();
+
+  // Block 2: Microcode & stored programs
   writeMicroCodeEEPROM();
+  writeStoredProgramEEPROM();
+  
   Serial.println("Done.");
 
   printContents();
