@@ -359,7 +359,7 @@ void writeMicroCodeEEPROM() {
   }
   
   uint16_t addr = 0x200; // set a9.
-  for (byte i = 0; i < LOAD_PROG_MICROCODE_LEN; ++i) {
+  for (uint16_t i = 0; i < LOAD_PROG_MICROCODE_LEN; ++i) {
     write24BitControlWordToEEPROMs(addr | i, LOAD_PROG_MICROCODE[i]);
   }
 }
