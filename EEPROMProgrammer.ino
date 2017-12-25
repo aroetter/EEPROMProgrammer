@@ -76,7 +76,8 @@ void printContents() {
   
 }
 
-// Program an EEPROM to be used to drive a 3 digit display given a register's contents
+// Program an EEPROM to be used to drive a 3 digit display given a register's contents.
+//
 // We have 4 digits, arranged from left to right as:
 // (sign place), (hundreds place), (tens place), (ones place)
 // 
@@ -94,6 +95,11 @@ void printContents() {
 // [1280...1535]: tens place digit     ""              ""
 // [1536...1791]: hundreds place digit ""              "" 
 // [1792...2047]: signs place digit    ""              "" (either a negative sign or blank)
+// 
+// Another way to think about memory layout is, for the 11 address pins a10...a0
+// a10: high if we are in 2s complement/signed int mode, 0 in unsigned mode
+// a9-a8: 2-bit counter value: 00 = 1s digit, 01=10s digit, 10=100s digit, 11= left-most sign digit
+// a7-a0: the byte of data to display (the number 0-255)
 void write7SegmentDecimalDisplayEEPROM() {
   // represent decimal digits 0 ->10 (the 8 bits for a screen display)
   byte digits[] = { 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b};
@@ -369,7 +375,7 @@ static byte STORED_PROGRAMS[] = {
   // Program #0 (000): Dummy just to see if memory is loading properly. Increments each bit in order
   0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 
 
-  // Program #1 (001): Add by 3
+  // Program #1 (001): Count by 3
   LDI | 3, // Read this as assembly "LDI 3"
   STA | 15,
   LDI | 0,
@@ -390,8 +396,18 @@ static byte STORED_PROGRAMS[] = {
   ADD | 14,
   JMP | 3,
   0, 0, 0, 0, 0, 0,
-  // Program #3 (011): NAME
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  
+  // Program #3 (011): Compute 43 + 6 - 7 = 42
+  LDA | 15,
+  ADD | 14,
+  SUB | 13,
+  OUT,
+  HLT,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  7,  // Data at Memory Address 13
+  6,  // Data at Memory Address 14
+  43, // Data at Memory Address 15
+
   // Program #4 (100): NAME
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
   // Program #5 (101): NAME
@@ -443,10 +459,10 @@ void setup() {
   // Block 2: Microcode & stored programs
   writeMicroCodeEEPROM();
   writeStoredProgramEEPROM();
-  
-  Serial.println("Done.");
 
   printContents();
+  Serial.println("Done.");
+
 }
 
 void loop() {
