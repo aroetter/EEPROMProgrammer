@@ -216,7 +216,6 @@ enum OpCodeName {
 };
 
 typedef struct OpCodeDefT {
-  const char* name; // TODO: delete this field I think.
   OpCodeName opcode;
   uint32_t microcode[NUM_CUSTOM_MICROCODE_PER_OPCODE];
 } OpCodeDefT;
@@ -225,25 +224,25 @@ typedef struct OpCodeDefT {
 
 // This defines what microcode runs for ecah opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
-  {"NUL", NOP,  {0, 0, 0}},
-  {"LDA", LDA,  {IO|MI, RO|AI, 0}},
-  {"ADD", ADD,  {IO|MI, RO|BI, SO|AI}},
-  {"NUL", SUB,  {IO|MI, RO|BI, SO|AI|SU}},
+  {NOP,  {0, 0, 0}},
+  {LDA,  {IO|MI, RO|AI, 0}},
+  {ADD,  {IO|MI, RO|BI, SO|AI}},
+  {SUB,  {IO|MI, RO|BI, SO|AI|SU}},
 
-  {"STA", STA, {IO|MI, AO|RI, 0}},
-  {"LDI", LDI, {IO|AI, 0, 0}},
-  {"JMP", JMP, {IO|J, 0, 0}},
-  {"NUL", NUL4, {0, 0, 0}},
+  {STA, {IO|MI, AO|RI, 0}},
+  {LDI, {IO|AI, 0, 0}},
+  {JMP, {IO|J, 0, 0}},
+  {NUL4, {0, 0, 0}},
   
-  {"NUL", NUL5, {0, 0, 0}},
-  {"NUL", NUL6, {0, 0, 0}},
-  {"NUL", NUL7, {0, 0, 0}},
-  {"NUL", NUL8, {0, 0, 0}},
+  {NUL5, {0, 0, 0}},
+  {NUL6, {0, 0, 0}},
+  {NUL7, {0, 0, 0}},
+  {NUL8, {0, 0, 0}},
   
-  {"NUL", NUL9, {0, 0, 0}},
-  {"NUL", NULA, {0, 0, 0}},
-  {"OUT", OUT,  {AO|OI, 0, 0}},
-  {"HLT", HLT,  {HALT, 0, 0}},
+  {NUL9, {0, 0, 0}},
+  {NULA, {0, 0, 0}},
+  {OUT,  {AO|OI, 0, 0}},
+  {HLT,  {HALT, 0, 0}},
 };
 
 /* Code that is needed regardless of what we're programming */
@@ -328,7 +327,7 @@ void writeMicroCodeEEPROM() {
     OpCodeDefT mc = OPCODE[opcode];
     char binaryStr[5];
     convert4BitIntToBinaryString(binaryStr, opcode);
-    snprintf(buf, 100, "Programming opcode %s (binary opcode = %s)", mc.name, binaryStr);
+    snprintf(buf, 100, "Programming binary opcode = %s.", binaryStr);
     Serial.println(buf);
     for(uint8_t step = 0; step < NUM_MICROCODE_PER_OPCODE; ++step) {
       // generate the lower 7 bits of the address: for opcode and microcode step count
