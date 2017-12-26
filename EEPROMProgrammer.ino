@@ -167,7 +167,10 @@ static uint32_t    J = 0x00000200; // Program Counter - Jump: Input from Bus
 static uint32_t   HO = 0x00000100; // Stored Program ("Hard Drive") EEPROM: Output to Bus
 
 // Right EEPROM control bits (least significant byte)
-static uint32_t   X0 = 0x00000080; // Input Register X - Write to Bus
+
+static uint32_t   JC = 0x00000080; // Jump Carry (JC) - Jump only if ALU overflow bit is set
+static uint32_t   X0 = 0x00000040; // Input Register X - Write to Bus
+static uint32_t   Y0 = 0x00000020; // Input Register Y - Write to Bus
 // down to             0x00000001; // last control bit
 
 // This is changable by moving the reset wire on the 3 bit counter on the control
