@@ -164,7 +164,7 @@ static uint32_t   OI = 0x00001000; // Output (LCD) Register - Input from Bus
 static uint32_t   CE = 0x00000800; // Program Counter - Counter Enable: PC will increment on each clock
 static uint32_t   CO = 0x00000400; // Program Counter - Output to Bus
 static uint32_t    J = 0x00000200; // Program Counter - Jump: Input from Bus
-static uint32_t   HO = 0x00000100; // Stored Program ("Hard Drive") EEPROM: Output to Bus
+static uint32_t   PO = 0x00000100; // Stored Program ("Hard Drive") EEPROM: Output to Bus
 
 // Right EEPROM control bits (least significant byte)
 
@@ -350,7 +350,7 @@ void writeMicroCodeEEPROM() {
   // Now write out the microcode instructions for the "Load program from another EEPROM into RAM"
   Serial.println("Programming microcode to load stored program from another EEPROM into RAM.");
   static int LOAD_PROG_MICROCODE_LEN = 64;
-  static uint32_t STEP1 = CO|MI, STEP2 = HO|RI|CE;
+  static uint32_t STEP1 = CO|MI, STEP2 = PO|RI|CE;
   static uint32_t LOAD_PROG_MICROCODE[] = {
     STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
     STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
