@@ -168,9 +168,9 @@ static uint32_t   PO = 0x00000100; // Stored Program ("Hard Drive") EEPROM: Outp
 
 // Right EEPROM control bits (least significant byte)
 
-static uint32_t   JC = 0x00000080; // Jump Carry (JC) - Jump only if ALU overflow bit is set
-static uint32_t   XO = 0x00000040; // Input Register X - Write to Bus
-static uint32_t   YO = 0x00000020; // Input Register Y - Write to Bus
+static uint32_t   XO = 0x00000080; // Input Register X - Write to Bus
+static uint32_t   YO = 0x00000040; // Input Register Y - Write to Bus
+static uint32_t   JC = 0x00000020; // Jump Carry (JC) - Jump only if ALU overflow bit is set
 // down to             0x00000001; // last control bit
 
 // This is changable by moving the reset wire on the 3 bit counter on the control
@@ -205,9 +205,9 @@ enum OpCodeName {
   STA =   4 << 4, // 0100: // Store A (write from A -> RAM)
   LDI =   5 << 4, // 0101: Load Immediate (into A)
   JMP =   6 << 4, // 0110: Jump
-  NUL4 =  7 << 4, // 0111: Unused
+  STX =   7 << 4, // 0111: Store X (write from X input register -> RAM)
 
-  NUL5 =  8 << 4, // 1000: Unused
+  STY =   8 << 4, // 1000: Store Y (write from Y input register -> RAM)
   NUL6 =  9 << 4, // 1001: Unused
   NUL7 = 10 << 4, // 1010: Unused
   NUL8 = 11 << 4, // 1011: Unused
@@ -235,9 +235,9 @@ static OpCodeDefT OPCODE[] = {
   {STA, {IO|MI, AO|RI, 0}},
   {LDI, {IO|AI, 0, 0}},
   {JMP, {IO|J, 0, 0}},
-  {NUL4, {0, 0, 0}},
-  
-  {NUL5, {0, 0, 0}},
+  {STX, {IO|MI, XO|RI, 0}},  // TODO: test this
+
+  {STY, {IO|MI, YO|RI, 0}},  // TODO: test this
   {NUL6, {0, 0, 0}},
   {NUL7, {0, 0, 0}},
   {NUL8, {0, 0, 0}},
@@ -456,11 +456,11 @@ void setup() {
 
   // Usage: Do one of these 2 blocks
   // Block 1: LCD displays
-  // write7SegmentDecimalDisplayEEPROM();
+  write7SegmentDecimalDisplayEEPROM();
 
   // Block 2: Microcode & stored programs
-  writeMicroCodeEEPROM();
-  writeStoredProgramEEPROM();
+  // writeMicroCodeEEPROM();
+  // writeStoredProgramEEPROM();
 
   printContents();
   Serial.println("Done.");
