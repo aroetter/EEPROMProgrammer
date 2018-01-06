@@ -410,10 +410,24 @@ static byte STORED_PROGRAMS[] = {
   6,  // Data at Memory Address 14
   43, // Data at Memory Address 15
 
-  // Program #4 (100): NAME
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-  // Program #5 (101): NAME
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  // Program #4 (100): Add 2 input registers
+  STX | 15,
+  STY | 14,
+  LDA | 15,
+  ADD | 14,
+  OUT,
+  HLT,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  
+  // Program #5 (101): Subtract 2 input registers
+  STX | 15,
+  STY | 14,
+  LDA | 15,
+  SUB | 14,
+  OUT,
+  HLT,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
   // Program #6 (110): NAME
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   // Program #7 (111): NAME
@@ -455,12 +469,14 @@ void setup() {
   Serial.println("Programming EEPROM...");
 
   // Usage: Do one of these 2 blocks
+#if 0
   // Block 1: LCD displays
   write7SegmentDecimalDisplayEEPROM();
-
+#else
   // Block 2: Microcode & stored programs
-  // writeMicroCodeEEPROM();
-  // writeStoredProgramEEPROM();
+  writeMicroCodeEEPROM();
+  writeStoredProgramEEPROM();
+#endif
 
   printContents();
   Serial.println("Done.");
