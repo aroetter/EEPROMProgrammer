@@ -225,7 +225,7 @@ typedef struct OpCodeDefT {
 
 
 
-// This defines what microcode runs for ecah opcode. unused steps are set to 0.
+// This defines what microcode runs for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
   {NOP,  {0, 0, 0}},
   {LDA,  {IO|MI, RO|AI, 0}},
