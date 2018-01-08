@@ -208,7 +208,7 @@ enum OpCodeName {
   STX =   7 << 4, // 0111: Store X (write from X input register -> RAM)
 
   STY =   8 << 4, // 1000: Store Y (write from Y input register -> RAM)
-  NUL6 =  9 << 4, // 1001: Unused
+  JCY =  9 << 4, // 1001: Jump Carry. Jump iff ALU carry bit was set on last operation.
   NUL7 = 10 << 4, // 1010: Unused
   NUL8 = 11 << 4, // 1011: Unused
 
@@ -235,10 +235,10 @@ static OpCodeDefT OPCODE[] = {
   {STA, {IO|MI, AO|RI, 0}},
   {LDI, {IO|AI, 0, 0}},
   {JMP, {IO|J, 0, 0}},
-  {STX, {IO|MI, XO|RI, 0}},  // TODO: test this
+  {STX, {IO|MI, XO|RI, 0}},
 
-  {STY, {IO|MI, YO|RI, 0}},  // TODO: test this
-  {NUL6, {0, 0, 0}},
+  {STY, {IO|MI, YO|RI, 0}},
+  {JCY, {IO|JC, 0, 0}}, // TODO: test this.
   {NUL7, {0, 0, 0}},
   {NUL8, {0, 0, 0}},
   
