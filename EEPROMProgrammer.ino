@@ -397,9 +397,28 @@ static byte STORED_PROGRAMS[] = {
   OUT,
   ADD | 14,
   JMP | 3,
-  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, // Used for storage (addr 14)
+  0, // Used for storage (addr 15)
+
+  // Program #3 (011): Fibonacci with JC
+  LDI | 0,
+  STA | 15,
+  LDI | 1,
+  OUT,
+  STA | 14,
+  ADD | 15,
+  JCY | 0, // New: TODO: test.
+  STA | 15,
+  OUT,
+  ADD | 14,
+  JCY | 0, // New: TODO: test
+  JMP | 3,
+  0, 0,
+  0, // Used for storage (addr 14)
+  0, // Used for storage (addr 15)
   
-  // Program #3 (011): Compute 43 + 6 - 7 = 42
+  // Program #4 (100): Compute 43 + 6 - 7 = 42
   LDA | 15,
   ADD | 14,
   SUB | 13,
@@ -410,7 +429,7 @@ static byte STORED_PROGRAMS[] = {
   6,  // Data at Memory Address 14
   43, // Data at Memory Address 15
 
-  // Program #4 (100): Add 2 input registers
+  // Program #5 (101): Add 2 input registers
   STX | 15,
   STY | 14,
   LDA | 15,
@@ -419,7 +438,7 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
   
-  // Program #5 (101): Subtract 2 input registers
+  // Program #6 (110): Subtract 2 input registers
   STX | 15,
   STY | 14,
   LDA | 15,
@@ -428,8 +447,6 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #6 (110): NAME
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   // Program #7 (111): NAME
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
@@ -445,6 +462,9 @@ void writeStoredProgramEEPROM() {
   // a9-a8-a7: unused, always 0.
   // a6-a5-a4: with program are we loading into RAM (0-7)
   // a3-a2-a1-a0: which assembly language instruction are we at for this program (0-15)
+
+  Serial.println("Programming stored assembly language programs into ROM.");
+
 
   int stored_programs_size = sizeof(STORED_PROGRAMS) / sizeof(STORED_PROGRAMS[0]);  
   if (stored_programs_size != (8 * 16)) {
