@@ -445,7 +445,7 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #6 (110): Multiply
+  // Program #6 (110): Multiply: TODO(test this)
   STX | 14,
   STY | 15,
   JMP |  6,
