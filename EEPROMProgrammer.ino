@@ -8,7 +8,7 @@
 
 #define EEPROM_NUM_BYTES 2048
 
-// Given a string in the range [0...15], return a human readable string of that number in binary
+// Given a 4-bit number in the range [0...15], return a human readable string of that number in binary
 // e.g. passing in 10 returns "1010"
 void convert4BitIntToBinaryString(char out[5], byte val) {
   for(int i = 0; i < 4; ++i) {
@@ -18,6 +18,7 @@ void convert4BitIntToBinaryString(char out[5], byte val) {
   out[4] = '\0';
 }
 
+// Set the EEPROM address, and whether we will read to, or write from it.
 void setAddress(uint16_t address, bool readMode) {
   // set the top bit to low when readMode is true.
   // that bit controls the output_enable pin on the EEPROM, which is active low.
@@ -60,6 +61,7 @@ void writeEEPROM(uint16_t address, byte data) {
   delay(5); // msec // works fine for me, but in video needs to be upped to 10.
 }
 
+// Print out entire EEPROM contents, 16 bytes per line
 void printContents() {
   Serial.println("------------------------------------------------------");
   for (int base = 0; base < EEPROM_NUM_BYTES; base += 16) {
@@ -76,7 +78,7 @@ void printContents() {
   
 }
 
-// Program an EEPROM to be used to drive a 3 digit display given a register's contents.
+// Program an EEPROM to drive a 4 digit display to show an 8-bit number (e.g. a register's contents.)
 //
 // We have 4 digits, arranged from left to right as:
 // (sign place), (hundreds place), (tens place), (ones place)
@@ -192,10 +194,9 @@ static int FETCH_MICROCODE_LEN = sizeof(FETCH_MICROCODE) / sizeof(FETCH_MICROCOD
 // we guarantee, via checking code below, that the following array is this size
 #define NUM_OPCODES 16
 
-// Define the symbolic assembler instruction name to binary opcode mapping here.
-// We use these to write programs. These must be consecutive integers starting
-// at zero, and in the same order as the OpCodeDefT OPCODE[] array below
-// (this is checked at init time).
+// Define the symbolic assembly instruction name to binary opcode mapping here.
+// These must be consecutive integers starting at zero, and in the same order
+// as the OpCodeDefT OPCODE[] array below (this is checked at init time).
 enum OpCodeName {
   NOP =   0 << 4, // 0000: Do nothing,
   LDA =   1 << 4, // 0001: Load A (write from RAM into A)
@@ -208,12 +209,12 @@ enum OpCodeName {
   STX =   7 << 4, // 0111: Store X (write from X input register -> RAM)
 
   STY =   8 << 4, // 1000: Store Y (write from Y input register -> RAM)
-  JCY =  9 << 4, // 1001: Jump Carry. Jump iff ALU carry bit was set on last operation.
-  NUL7 = 10 << 4, // 1010: Unused
-  NUL8 = 11 << 4, // 1011: Unused
+  JCY =   9 << 4, // 1001: Jump Carry. Jump iff ALU carry bit was set on last operation.
+  SUI =  10 << 4, // 1010: Subtract Immediate
+  NUL1 = 11 << 4, // 1011: Unused
 
-  NUL9 = 12 << 4, // 1100: Unused
-  NULA = 13 << 4, // 1101: Unused
+  NUL2 = 12 << 4, // 1100: Unused
+  NUL3 = 13 << 4, // 1101: Unused
   OUT  = 14 << 4, // 1110: Output register A to output register (LCD display)
   HLT  = 15 << 4  // 1111: Halt the computer by stopping the clock
 };
@@ -224,8 +225,8 @@ typedef struct OpCodeDefT {
 } OpCodeDefT;
 
 
-
-// This defines what microcode runs for each opcode. unused steps are set to 0.
+// This defines what each assembly language instruction does, i.e. what microcode
+// runs for each opcode. unused steps are set to 0.
 static OpCodeDefT OPCODE[] = {
   {NOP,  {0, 0, 0}},
   {LDA,  {IO|MI, RO|AI, 0}},
@@ -239,16 +240,16 @@ static OpCodeDefT OPCODE[] = {
 
   {STY, {IO|MI, YO|RI, 0}},
   {JCY, {IO|JC, 0, 0}},
-  {SUI, {IO|BI, SO|AI|SU, 0}}, // Subtract Immediate. TODO: test this.
-  {NUL8, {0, 0, 0}},
+  {SUI, {IO|BI, SO|AI|SU, 0}}, // TODO: test this.
+  {NUL1, {0, 0, 0}},
   
-  {NUL9, {0, 0, 0}},
-  {NULA, {0, 0, 0}},
+  {NUL2, {0, 0, 0}},
+  {NUL3, {0, 0, 0}},
   {OUT,  {AO|OI, 0, 0}},
   {HLT,  {HALT, 0, 0}},
 };
 
-/* Code that is needed regardless of what we're programming */
+// Code that is needed regardless of what EEPROM we're programming
 void doCommonInit() {
   pinMode(SHIFT_DATA, OUTPUT);
   pinMode(SHIFT_CLK, OUTPUT);
@@ -374,10 +375,7 @@ void writeMicroCodeEEPROM() {
 
 // Hard-code 8 16 byte programs here.
 static byte STORED_PROGRAMS[] = {
-  // Program #0 (000): Dummy just to see if memory is loading properly. Increments each bit in order
-  0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 
-
-  // Program #1 (001): Count by 3
+  // Program #0 (000): Count by 3
   LDI | 3, // Read this as assembly "LDI 3"
   STA | 15,
   LDI | 0,
@@ -386,7 +384,7 @@ static byte STORED_PROGRAMS[] = {
   JMP | 3,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
-  // Program #2 (010): Fibonacci
+  // Program #1 (001): Fibonacci
   LDI | 0,
   STA | 15,
   LDI | 1,
@@ -401,7 +399,7 @@ static byte STORED_PROGRAMS[] = {
   0, // Used for storage (addr 14)
   0, // Used for storage (addr 15)
 
-  // Program #3 (011): Fibonacci with JC
+  // Program #2 (010): Fibonacci with JC
   LDI | 0,
   STA | 15,
   LDI | 1,
@@ -418,7 +416,7 @@ static byte STORED_PROGRAMS[] = {
   0, // Used for storage (addr 14)
   0, // Used for storage (addr 15)
   
-  // Program #4 (100): Compute 43 + 6 - 7 = 42
+  // Program #3 (011): Compute 43 + 6 - 7 = 42
   LDA | 15,
   ADD | 14,
   SUB | 13,
@@ -429,7 +427,7 @@ static byte STORED_PROGRAMS[] = {
   6,  // Data at Memory Address 14
   43, // Data at Memory Address 15
 
-  // Program #5 (101): Add 2 input registers
+  // Program #4 (100): Add 2 input registers
   STX | 15,
   STY | 14,
   LDA | 15,
@@ -438,7 +436,7 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
   
-  // Program #6 (110): Subtract 2 input registers
+  // Program #5 (101): Subtract 2 input registers
   STX | 15,
   STY | 14,
   LDA | 15,
@@ -447,35 +445,36 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #7 (111): Multiply
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // Program #6 (110): Multiply
+  STX | 14,
+  STY | 15,
+  JMP |  6,
+  LDA | 13, // start of loop, add first input to the result
+  ADD | 14,
+  STA | 13, // Could do an OUT right after this if we had sufficient memory.
+  LDA | 15, // subtract one from the second input
+  SUI | 11, // Subtract 1
+  STA | 15,
+  JC  |  3, // jump if second input was greater than 0
+  LDA | 13, // load the result
+  OUT,
+  HLT,
+  0,    // 13: result, initialized to 0.
+  0,    // 14: 1st input. This is summed repeatedly with result
+  0,    // 15: 2nd input. How many times remaining to sum in 1st input.
 
-JMP | 4,
-LDA | 13,    // start of loop, add first input to the result
-ADD | 14,
-STA | 13,
-LDA | 15,     // subtract one from the second input
-SUB | 12,
-STA | 15,
-JC  |  1,       // jump if second input was greater than 0
-LDA | 13,    // load the result
-OUT,
-HLT,
-0,       // 11: unused
-1,    // 12: needed for quickly subtracting one
-0,    // 13: result, initialized to 0.
-0,       // 14: 1st input
-0       // 15: 2nd input
-
-  
+  // Program #7 (111): Empty TODO(implement a double program?
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  
 };
 
 
 // Write out the EEPROM that is used as 'cold-storage' for programs/RAM contents.
 // This can be loaded by the above microcode into memory right on power up.
 void writeStoredProgramEEPROM() {
-  // Note addressing here is mutually exclusive with microcodeEEPROM, meaning we can load a single
-  // physical chip with both sets of data
+  // Note addressing here uses non-overlapping addresses as the microcodeEEPROM,
+  // so we can load one EEPROM with all the microcode and these stores programs
+  // physical wiring will determine with addresses get read (hence which function the EEPROM serves)
+  //
   // the addressing for 11 address bits is
   // a10: 1 (meaning we are in the stored program EEPROM, as opposed to microcode EEPROMs).
   // a9-a8-a7: unused, always 0.
@@ -483,7 +482,6 @@ void writeStoredProgramEEPROM() {
   // a3-a2-a1-a0: which assembly language instruction are we at for this program (0-15)
 
   Serial.println("Programming stored assembly language programs into ROM.");
-
 
   int stored_programs_size = sizeof(STORED_PROGRAMS) / sizeof(STORED_PROGRAMS[0]);  
   if (stored_programs_size != (8 * 16)) {
@@ -519,7 +517,6 @@ void setup() {
 
   printContents();
   Serial.println("Done.");
-
 }
 
 void loop() {
