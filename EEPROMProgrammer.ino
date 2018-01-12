@@ -447,8 +447,27 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #7 (111): NAME
+  // Program #7 (111): Multiply
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+JMP | 4,
+LDA | 13,    // start of loop, add first input to the result
+ADD | 14,
+STA | 13,
+LDA | 15,     // subtract one from the second input
+SUB | 12,
+STA | 15,
+JC  |  1,       // jump if second input was greater than 0
+LDA | 13,    // load the result
+OUT,
+HLT,
+0,       // 11: unused
+1,    // 12: needed for quickly subtracting one
+0,    // 13: result, initialized to 0.
+0,       // 14: 1st input
+0       // 15: 2nd input
+
+  
 };
 
 
