@@ -463,8 +463,15 @@ static byte STORED_PROGRAMS[] = {
   0,    // 14: 1st input. This is summed repeatedly with result
   0,    // 15: 2nd input. How many times remaining to sum in 1st input.
 
-  // Program #7 (111): Empty TODO(implement a double program?
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  
+  // Program #7 (111): Double. TODO: test this
+  STX | 15,
+  LDA | 15,
+  OUT, // Top of loop. A has current value, as does RAM addr 15
+  ADD | 15,
+  JC  | 0,
+  STA | 15,
+  J   | 2,
+  0, 0, 0, 0, 0, 0, 0, 0, 0  
 };
 
 
