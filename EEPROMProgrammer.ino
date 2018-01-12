@@ -238,8 +238,8 @@ static OpCodeDefT OPCODE[] = {
   {STX, {IO|MI, XO|RI, 0}},
 
   {STY, {IO|MI, YO|RI, 0}},
-  {JCY, {IO|JC, 0, 0}}, // TODO: test this.
-  {NUL7, {0, 0, 0}},
+  {JCY, {IO|JC, 0, 0}},
+  {SUI, {IO|BI, SO|AI|SU, 0}}, // Subtract Immediate. TODO: test this.
   {NUL8, {0, 0, 0}},
   
   {NUL9, {0, 0, 0}},
@@ -408,11 +408,11 @@ static byte STORED_PROGRAMS[] = {
   OUT,
   STA | 14,
   ADD | 15,
-  JCY | 0, // New: TODO: test.
+  JCY | 0,
   STA | 15,
   OUT,
   ADD | 14,
-  JCY | 0, // New: TODO: test
+  JCY | 0,
   JMP | 3,
   0, 0,
   0, // Used for storage (addr 14)
