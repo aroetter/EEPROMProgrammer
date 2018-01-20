@@ -445,7 +445,7 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #6 (110): Multiply: TODO(test this)
+  // Program #6 (110): Multiply: TODO(test this). Doesnt work, need to debug.
   STX | 14,
   STY | 15,
   JMP |  6,
@@ -455,7 +455,7 @@ static byte STORED_PROGRAMS[] = {
   LDA | 15, // subtract one from the second input
   SUI | 11, // Subtract 1
   STA | 15,
-  JC  |  3, // jump if second input was greater than 0
+  JCY |  3, // jump if second input was greater than 0
   LDA | 13, // load the result
   OUT,
   HLT,
@@ -463,14 +463,14 @@ static byte STORED_PROGRAMS[] = {
   0,    // 14: 1st input. This is summed repeatedly with result
   0,    // 15: 2nd input. How many times remaining to sum in 1st input.
 
-  // Program #7 (111): Double. TODO: test this
+  // Program #7 (111): Double.
   STX | 15,
   LDA | 15,
   OUT, // Top of loop. A has current value, as does RAM addr 15
   ADD | 15,
-  JC  | 0,
+  JCY | 0, // Reset if we overflow
   STA | 15,
-  J   | 2,
+  JMP | 2,
   0, 0, 0, 0, 0, 0, 0, 0, 0  
 };
 
