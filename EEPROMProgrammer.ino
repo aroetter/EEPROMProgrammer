@@ -240,7 +240,7 @@ static OpCodeDefT OPCODE[] = {
 
   {STY, {IO|MI, YO|RI, 0}},
   {JCY, {IO|JC, 0, 0}},
-  {SUI, {IO|BI, SO|AI|SU, 0}}, // TODO: test this.
+  {SUI, {IO|BI, SO|AI|SU, 0}},
   {NUL1, {0, 0, 0}},
   
   {NUL2, {0, 0, 0}},
@@ -445,7 +445,10 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #6 (110): Multiply: TODO(test this). Doesnt work, need to debug.
+  // Program #6 (110): Multiply: Works, but not idempotent as it leaves dat
+  // In address 13. If we can shrink this by one instruction, and then add a
+  // "Zero Out Memory @ Address" assembly lang instruction that we call first
+  // We could fix this.
   STX | 14,
   STY | 15,
   JMP |  6,
@@ -453,7 +456,7 @@ static byte STORED_PROGRAMS[] = {
   ADD | 14,
   STA | 13, // Could do an OUT right after this if we had sufficient memory.
   LDA | 15, // subtract one from the second input
-  SUI | 11, // Subtract 1
+  SUI |  1, // Subtract 1
   STA | 15,
   JCY |  3, // jump if second input was greater than 0
   LDA | 13, // load the result
