@@ -241,6 +241,12 @@ static OpCodeDefT OPCODE[] = {
   {STY, {IO|MI, YO|RI, 0}},
   {JCY, {IO|JC, 0, 0}},
   {SUI, {IO|BI, SO|AI|SU, 0}},
+
+  // TODO: Add a "Zero Address" instruction, e.g ZRO 13 will set data at RAM address @13 to
+  // zero.
+  // Something like: IO|MI, RI. Will only work if, when nothing is on bus, the
+  // pulldown resistors ensure all data lines are zero. If not, we'd need HW
+  // to output all zeroes, and a control line (ZO?) to enable that.
   {NUL1, {0, 0, 0}},
   
   {NUL2, {0, 0, 0}},
