@@ -182,7 +182,7 @@ static uint32_t   JC = 0x00000020; // Jump Carry (JC) - Jump only if ALU overflo
 
 // Every instruction starts with a fetch, so we program that here.
 // Way to read this is:
-// On 1st clock cycle, a fetch sets the CO & MI conrol lines
+// On 1st clock cycle, a fetch sets the CO & MI control lines
 // On 2nd clock cycle, a fetch sets the RO, II, & CE control lines
 static uint32_t FETCH_MICROCODE[] = {CO | MI, RO | II | CE };
 static int FETCH_MICROCODE_LEN = sizeof(FETCH_MICROCODE) / sizeof(FETCH_MICROCODE[0]);
@@ -245,7 +245,7 @@ static OpCodeDefT OPCODE[] = {
   // TODO: Add a "Zero Address" instruction, e.g ZRO 13 will set data at RAM address @13 to
   // zero.
   // Something like: IO|MI, RI. Will only work if, when nothing is on bus, the
-  // pulldown resistors ensure all data lines are zero. If not, we'd need HW
+  // pull down resistors ensure all data lines are zero. If not, we'd need HW
   // to output all zeroes, and a control line (ZO?) to enable that.
   {NUL1, {0, 0, 0}},
   
@@ -451,10 +451,10 @@ static byte STORED_PROGRAMS[] = {
   HLT,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-  // Program #6 (110): Multiply: Works, but not idempotent as it leaves dat
-  // In address 13. If we can shrink this by one instruction, and then add a
-  // "Zero Out Memory @ Address" assembly lang instruction that we call first
-  // We could fix this.
+  // Program #6 (110): Multiply: This works, but is not idempotent as it leaves data
+  // in address 13. If we can shrink this by one instruction, and then add a
+  // "Zero Out Memory @ Address" assembly language instruction that we call first, then
+  // this would be idempotent.
   STX | 14,
   STY | 15,
   JMP |  6,
