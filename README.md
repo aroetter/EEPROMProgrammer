@@ -1,6 +1,8 @@
 # EEPROMProgrammer
 Simple Arduino code to program EEPROMs for a simple 8-bit breadboard computer project
 
+More detailed documentation for the actual computer can be found [here](https://docs.google.com/document/d/15yL4C0ukLrMd32EVRmozn8x13IjeZRVXZLeEXENS4ys/edit?usp=sharing).
+
 We can program the EEPROM to do a few things:
 
 1. EEPROM can take in an 8-bit number and then render it in decimal by driving a 7 segment display. It can interpret the bits as either a signed or unsigned integer (controllable via another input line). The output can drive 1 of 4 displays, for the leading sign bit place, hundreds place, tens place, and finally ones place. (Which digit is is rendering is also controlled by 2 input lines). This part borrowed / copied heavily from Ben Eater's work.
