@@ -381,14 +381,18 @@ void writeMicroCodeEEPROM() {
 
 // Hard-code 8 16 byte programs here.
 static byte STORED_PROGRAMS[] = {
-  // Program #0 (000): Count by 3
-  LDI | 3, // Read this as assembly "LDI 3"
+  // Program #0 (000): Count by 2, Starting at the X register's value
+  LDI | 2, // This is the hardcoded "2" to count by.
   STA | 15,
-  LDI | 0,
+  STX | 14,
+  LDA | 14,
+  OUT,
   ADD | 15,
   OUT,
-  JMP | 3,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+  JMP | 5,
+  0, 0, 0, 0, 0, 0,
+  0, // @14: Store the X register's value here. It's where we start incrementing from
+  0, // @15: Number we are incrementing by
 
   // Program #1 (001): Fibonacci
   LDI | 0,
