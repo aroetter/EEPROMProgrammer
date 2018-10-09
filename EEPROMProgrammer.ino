@@ -8,6 +8,11 @@
 
 #define EEPROM_NUM_BYTES 2048
 
+// Map a digit to what segments of a display to light up t represent that digit as a decimal char
+// e.g. DIGITS[4] = the segments to light up to render a 4.
+byte DIGITS[] = { 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b};
+
+
 // Given a 4-bit number in the range [0...15], return a human readable string of that number in binary
 // e.g. passing in 10 returns "1010"
 void convert4BitIntToBinaryString(char out[5], byte val) {
@@ -102,9 +107,7 @@ void printContents() {
 // a10: high if we are in 2s complement/signed int mode, 0 in unsigned mode
 // a9-a8: 2-bit counter value: 00 = 1s digit, 01=10s digit, 10=100s digit, 11= left-most sign digit
 // a7-a0: the byte of data to display (the number 0-255)
-void write7SegmentDecimalDisplayEEPROM() {
-  // represent decimal digits 0 ->10 (the 8 bits for a screen display)
-  byte digits[] = { 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b};
+void write8BitDisplayEEPROM() {
 
   // program the lower half of the chip, unsigned numbers
   Serial.println("Programming unsigned mode...");
@@ -114,9 +117,9 @@ void write7SegmentDecimalDisplayEEPROM() {
     uint16_t hundreds_addr = 512 + value;  // make upper byte 00000010
     uint16_t sign_addr = 768 + value; // make upper byte 00000011
 
-    writeEEPROM(zeros_addr, digits[value % 10]);
-    writeEEPROM(tens_addr, digits[(value / 10) % 10]);
-    writeEEPROM(hundreds_addr, digits[(value / 100) % 10]);
+    writeEEPROM(zeros_addr, DIGITS[value % 10]);
+    writeEEPROM(tens_addr, DIGITS[(value / 10) % 10]);
+    writeEEPROM(hundreds_addr, DIGITS[(value / 100) % 10]);
     writeEEPROM(sign_addr, 0);    
   }
   
@@ -128,12 +131,46 @@ void write7SegmentDecimalDisplayEEPROM() {
     uint16_t hundreds_addr = 1536 + (byte) value;
     uint16_t sign_addr = 1792 + byte (value);
 
-    writeEEPROM(zeros_addr, digits[abs(value) % 10]);
-    writeEEPROM(tens_addr,  digits[abs(value / 10) % 10]);
-    writeEEPROM(hundreds_addr, digits[abs(value / 100) % 10]);
+    writeEEPROM(zeros_addr, DIGITS[abs(value) % 10]);
+    writeEEPROM(tens_addr,  DIGITS[abs(value / 10) % 10]);
+    writeEEPROM(hundreds_addr, DIGITS[abs(value / 100) % 10]);
     writeEEPROM(sign_addr, (value < 0) ? 0x01 : 0x00); // 0x01 == the negative sign
   }
 }
+
+// Program an EEPROM to drive displays for the addition/subtraction of 2 4 bit numbers into
+// a 5 bit result.
+// We have 7 7-segment LCD displays to represent an equation as follows:
+// AA +/- BB = CCC
+// Where each A, B, or C are a 7-segment LCD display.
+//
+// One EEPROM drives AA and BB (we call it the OperandEEPROM). The other EEPROM drives CCC (ResultEEPROM).
+// Both AA and BB are unsigned 4 bit numbers, rendered in decimal as 0-15.
+// In addition mode, CCC is an unsigned number, between 0-30. (it's impossible to get 31 just given the operands)
+// In substraction mode, CCC is a 2s complement number, between [-15 and 15] (impossible to get 16 given the operands)
+
+// EEPROM memory layout, for the 11 address pins a10...a0:
+// a10: high for the ResultEEPROM, 0 for the operandEEPROM
+// a9-a8: the 2-bit counter value telling what digit we are rendering.
+//        in OperandEEPROM mode it's:
+//           11: A tens digit, 10: A ones digit, 01: B tens digit, 00: B ones digit.
+//        in ResultEEPROM it's:
+//           11: unused (only drives 3 digits), 10: sign prefix, 01: tens digit, 00: ones digit. 
+//
+// The last bits are then EEPROM dependent:
+//
+// For the operand EEPROM:
+// a7-a4: the four bytes of data that represent a decimal [0-15] in operand A.
+// a3-a0: the four bytes of data that represent a decial [0-15] in operand B.
+// 
+// For the Result EEPROM:
+// a7-a6: always 0.
+// a5: 1 for "render in 2s complement", 0 for render in unsigned
+// a4-a0: the 5-bit number to render
+void write4BitDisplayEEPROM() {
+  
+}
+
 
 // Clears an EEPROM, setting all data to zero.
 void eraseEEPROM() {
@@ -525,14 +562,20 @@ void setup() {
   
   Serial.println("Programming EEPROM...");
 
+#define EIGHT_BIT_LCD_EEPROM 0
+#define MICROCODE_EEPROM     0
+#define FOUR_BIT_LCD_EEPROM  1
+
   // Usage: Do one of these 2 blocks
-#if 0
+#if EIGHT_BIT_LCD_EEROM
   // Block 1: LCD displays
-  write7SegmentDecimalDisplayEEPROM();
-#else
+  write8BitDisplayEEPROM();
+#elif MICROCODE_EEPROM
   // Block 2: Microcode & stored programs
   writeMicroCodeEEPROM();
   writeStoredProgramEEPROM();
+#elif FOUR_BIT_LCD_EEPROM
+  write4BitDisplayEEPROM();
 #endif
 
   printContents();
