@@ -12,6 +12,8 @@
 // e.g. DIGITS[4] = the segments to light up to render a 4.
 byte DIGITS[] = { 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b};
 
+byte NEGATIVE = 0x01;
+byte BLANK = 0x00;
 
 // Given a 4-bit number in the range [0...15], return a human readable string of that number in binary
 // e.g. passing in 10 returns "1010"
@@ -112,12 +114,12 @@ void write8BitDisplayEEPROM() {
   // program the lower half of the chip, unsigned numbers
   Serial.println("Programming unsigned mode...");
   for (int value = 0; value < 256; ++value) {
-    uint16_t zeros_addr = value; // zeroes place address
-    uint16_t tens_addr = 256 + value;        // make upper byte 00000001
-    uint16_t hundreds_addr = 512 + value;  // make upper byte 00000010
-    uint16_t sign_addr = 768 + value; // make upper byte 00000011
+    uint16_t ones_addr = value; // ones place address
+    uint16_t tens_addr = 256 + value;        // make upper byte 0000 0001
+    uint16_t hundreds_addr = 512 + value;    // make upper byte 0000 0010
+    uint16_t sign_addr = 768 + value;        // make upper byte 0000 0011
 
-    writeEEPROM(zeros_addr, DIGITS[value % 10]);
+    writeEEPROM(ones_addr, DIGITS[value % 10]);
     writeEEPROM(tens_addr, DIGITS[(value / 10) % 10]);
     writeEEPROM(hundreds_addr, DIGITS[(value / 100) % 10]);
     writeEEPROM(sign_addr, 0);    
@@ -126,34 +128,34 @@ void write8BitDisplayEEPROM() {
   // program the upper half of the chip, 2s complement
   Serial.println("Programming signed mode...");
   for(int value = -128; value < 128; ++value) {
-    uint16_t zeros_addr = 1024 + (byte) value;
+    uint16_t ones_addr = 1024 + (byte) value;
     uint16_t tens_addr = 1280 + (byte) value;
     uint16_t hundreds_addr = 1536 + (byte) value;
     uint16_t sign_addr = 1792 + byte (value);
 
-    writeEEPROM(zeros_addr, DIGITS[abs(value) % 10]);
+    writeEEPROM(ones_addr, DIGITS[abs(value) % 10]);
     writeEEPROM(tens_addr,  DIGITS[abs(value / 10) % 10]);
     writeEEPROM(hundreds_addr, DIGITS[abs(value / 100) % 10]);
-    writeEEPROM(sign_addr, (value < 0) ? 0x01 : 0x00); // 0x01 == the negative sign
+    writeEEPROM(sign_addr, (value < 0) ? NEGATIVE : BLANK);
   }
 }
 
-// Program an EEPROM to drive displays for the addition/subtraction of 2 4 bit numbers into
-// a 5 bit result.
+// Program an EEPROM to drive displays for the addition/subtraction of 2 4 bit numbers into a 5 bit result.
 // We have 7 7-segment LCD displays to represent an equation as follows:
+
 // AA +/- BB = CCC
 // Where each A, B, or C are a 7-segment LCD display.
 //
-// One EEPROM drives AA and BB (we call it the OperandEEPROM). The other EEPROM drives CCC (ResultEEPROM).
+// One EEPROM drives AA and BB (we call it the Operand EEPROM). The other EEPROM drives CCC (Result EEPROM).
 // Both AA and BB are unsigned 4 bit numbers, rendered in decimal as 0-15.
 // In addition mode, CCC is an unsigned number, between 0-30. (it's impossible to get 31 just given the operands)
 // In substraction mode, CCC is a 2s complement number, between [-15 and 15] (impossible to get 16 given the operands)
 
 // EEPROM memory layout, for the 11 address pins a10...a0:
-// a10: high for the ResultEEPROM, 0 for the operandEEPROM
+// a10: 1 for the ResultEEPROM, 0 for the operandEEPROM
 // a9-a8: the 2-bit counter value telling what digit we are rendering.
 //        in OperandEEPROM mode it's:
-//           11: A tens digit, 10: A ones digit, 01: B tens digit, 00: B ones digit.
+//           11: AA's tens digit, 10: AA's ones digit, 01: BB's tens digit, 00: BB's ones digit.
 //        in ResultEEPROM it's:
 //           11: unused (only drives 3 digits), 10: sign prefix, 01: tens digit, 00: ones digit. 
 //
@@ -168,7 +170,48 @@ void write8BitDisplayEEPROM() {
 // a5: 1 for "render in 2s complement", 0 for render in unsigned
 // a4-a0: the 5-bit number to render
 void write4BitDisplayEEPROM() {
-  
+  // TODO: verify this is right?
+  Serial.println("Programming operator EEPROM...");
+  // for every possible AABB combination.
+  for (uint8_t aa = 0; aa < 16; ++aa) {
+    for (uint8_t bb = 0; bb < 16; ++bb) {
+      uint8_t aabb = (aa << 4) | bb; // both 4 bit operands AA and BB, concatted together into an 8-bit number.
+      uint16_t upper_a_digit_addr = 768 + aabb;   // make upper byte 0000 0011. aka a10 to 0, a9a8 to 11
+      uint16_t lower_a_digit_addr = 512 + aabb;   // make upper byte 0000 0010. aka a10 to 0, a9a8 to 10
+
+      uint16_t upper_b_digit_addr = 256 + aabb;   // make upper byte 0000 0001. aka a10 to 0, a9a8 to 01
+      uint16_t lower_b_digit_addr = aabb;         // make upper byte 0000 0000. aka a10 to 0, a9a8 to 00
+
+      writeEEPROM(upper_a_digit_addr, DIGITS[aa / 10]);
+      writeEEPROM(lower_a_digit_addr, DIGITS[aa % 10]);
+      writeEEPROM(upper_b_digit_addr, DIGITS[bb / 10]);
+      writeEEPROM(lower_b_digit_addr, DIGITS[bb % 10]);
+    }
+  }
+   
+  Serial.println("Programming result EEPROM (unsigned)...");
+  for(uint8_t value = 0; value < 31; ++value) {
+    // address should be 0000 01cc xxxx xxxx // (cc is the counter here)
+    uint16_t ones_addr = 1024 + value;     // sets upper byte to 0000 0100
+    uint16_t tens_addr = 1280 + value;     // sets upper byte to 0000 0101
+    uint16_t sign_addr = 1536 + value;     // sets upper byte to 0000 0110
+    writeEEPROM(ones_addr, DIGITS[value % 10]);
+    writeEEPROM(tens_addr, DIGITS[value / 10]);
+  }
+
+  Serial.println("Programming result EEPROM (signed)...");
+  for(int8_t value = -15; value < 16; ++value) {
+    // TODO: set chopped value to be a 5 bit 2s complement result of value. can i just drop top 3 bits????
+    uint8_t five_bit_value = value; // TODO mask out the bottom 5 bits only, as in & with 0x1f
+    // here the +32 is what sets a5, the bit saying to render in 2s complement (signed)
+    uint16_t ones_addr = 1024 + 32 + five_bit_value;     // sets upper byte to 0000 0100
+    uint16_t tens_addr = 1280 + 32 + five_bit_value;     // sets upper byte to 0000 0101
+    uint16_t sign_addr = 1536 + 32 + five_bit_value;     // sets upper byte to 0000 0110
+    
+    writeEEPROM(ones_addr, DIGITS[abs(value) % 10]);
+    writeEEPROM(tens_addr, DIGITS[abs(value) / 10]);
+    writeEEPROM(sign_addr, (value < 0) ? NEGATIVE : BLANK);
+  }
 }
 
 
