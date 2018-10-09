@@ -202,7 +202,7 @@ void write4BitDisplayEEPROM() {
   Serial.println("Programming result EEPROM (signed)...");
   for(int8_t value = -15; value < 16; ++value) {
     // TODO: set chopped value to be a 5 bit 2s complement result of value. can i just drop top 3 bits????
-    uint8_t five_bit_value = value; // TODO mask out the bottom 5 bits only, as in & with 0x1f
+    uint8_t five_bit_value = ((uint8_t) value) & 0x1f; // TODO mask out the bottom 5 bits only, as in & with 0x1f
     // here the +32 is what sets a5, the bit saying to render in 2s complement (signed)
     uint16_t ones_addr = 1024 + 32 + five_bit_value;     // sets upper byte to 0000 0100
     uint16_t tens_addr = 1280 + 32 + five_bit_value;     // sets upper byte to 0000 0101
