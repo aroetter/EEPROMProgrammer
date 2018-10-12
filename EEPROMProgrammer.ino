@@ -12,8 +12,8 @@
 // e.g. DIGITS[4] = the segments to light up to render a 4.
 byte DIGITS[] = { 0x7e, 0x30, 0x6d, 0x79, 0x33, 0x5b, 0x5f, 0x70, 0x7f, 0x7b};
 
-byte NEGATIVE = 0x01;
-byte BLANK = 0x00;
+byte DIGIT_NEGATIVE = 0x01;
+byte DIGIT_BLANK = 0x00;
 
 // Given a 4-bit number in the range [0...15], return a human readable string of that number in binary
 // e.g. passing in 10 returns "1010"
@@ -136,7 +136,7 @@ void write8BitDisplayEEPROM() {
     writeEEPROM(ones_addr, DIGITS[abs(value) % 10]);
     writeEEPROM(tens_addr,  DIGITS[abs(value / 10) % 10]);
     writeEEPROM(hundreds_addr, DIGITS[abs(value / 100) % 10]);
-    writeEEPROM(sign_addr, (value < 0) ? NEGATIVE : BLANK);
+    writeEEPROM(sign_addr, (value < 0) ? DIGIT_NEGATIVE : DIGIT_BLANK);
   }
 }
 
@@ -191,26 +191,29 @@ void write4BitDisplayEEPROM() {
    
   Serial.println("Programming result EEPROM (unsigned)...");
   for(uint8_t value = 0; value < 31; ++value) {
-    // address should be 0000 01cc xxxx xxxx // (cc is the counter here)
+    // address should be 0000 01cc 000x xxxx // (cc is the counter here, xxxxx is the 5-bit unsigned result)
     uint16_t ones_addr = 1024 + value;     // sets upper byte to 0000 0100
     uint16_t tens_addr = 1280 + value;     // sets upper byte to 0000 0101
     uint16_t sign_addr = 1536 + value;     // sets upper byte to 0000 0110
     writeEEPROM(ones_addr, DIGITS[value % 10]);
     writeEEPROM(tens_addr, DIGITS[value / 10]);
+    writeEEPROM(sign_addr, DIGIT_BLANK);
   }
 
   Serial.println("Programming result EEPROM (signed)...");
   for(int8_t value = -15; value < 16; ++value) {
-    // TODO: set chopped value to be a 5 bit 2s complement result of value. can i just drop top 3 bits????
-    uint8_t five_bit_value = ((uint8_t) value) & 0x1f; // TODO mask out the bottom 5 bits only, as in & with 0x1f
-    // here the +32 is what sets a5, the bit saying to render in 2s complement (signed)
-    uint16_t ones_addr = 1024 + 32 + five_bit_value;     // sets upper byte to 0000 0100
-    uint16_t tens_addr = 1280 + 32 + five_bit_value;     // sets upper byte to 0000 0101
-    uint16_t sign_addr = 1536 + 32 + five_bit_value;     // sets upper byte to 0000 0110
+    // address should be 0000 01cc 001x xxxx // (cc is the counter here, xxxxx is the 5-bit signed result)
     
+    // set the top 3 bits to 0. this leaves a 5-bit signed 2s complement number of the same value.
+    // adding in 32 sets a5 to 1.
+    uint8_t five_bit_value = ((uint8_t) value) & 0x1f; // TODO mask out the bottom 5 bits only, as in & with 0x1f
+    uint16_t ones_addr = 1024 + 32 + five_bit_value; // set upper 12 bits to 0000 0100 0010
+    uint16_t tens_addr = 1280 + 32 + five_bit_value; // set upper 12 bits to 0000 0101 0010
+    uint16_t sign_addr = 1536 + 32 + five_bit_value; // set upper 12 bits to 0000 0110 0010
+        
     writeEEPROM(ones_addr, DIGITS[abs(value) % 10]);
     writeEEPROM(tens_addr, DIGITS[abs(value) / 10]);
-    writeEEPROM(sign_addr, (value < 0) ? NEGATIVE : BLANK);
+    writeEEPROM(sign_addr, (value < 0) ? DIGIT_NEGATIVE : DIGIT_BLANK);
   }
 }
 
