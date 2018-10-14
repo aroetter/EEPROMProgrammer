@@ -182,9 +182,13 @@ void write4BitDisplayEEPROM() {
       uint16_t upper_b_digit_addr = 256 + aabb;   // make upper byte 0000 0001. aka a10 to 0, a9a8 to 01
       uint16_t lower_b_digit_addr = aabb;         // make upper byte 0000 0000. aka a10 to 0, a9a8 to 00
 
-      writeEEPROM(upper_a_digit_addr, DIGITS[aa / 10]);
+      int aa_tens_digit = aa / 10;
+      // if the tens digit is zero, just omit the leading zero (e.g. render 5 as "5", not "05");
+      writeEEPROM(upper_a_digit_addr, (aa_tens_digit != 0) ? DIGITS[aa_tens_digit] : DIGIT_BLANK);
       writeEEPROM(lower_a_digit_addr, DIGITS[aa % 10]);
-      writeEEPROM(upper_b_digit_addr, DIGITS[bb / 10]);
+      
+      int bb_tens_digit = bb / 10;
+      writeEEPROM(upper_b_digit_addr, (bb_tens_digit != 0) ? DIGITS[bb_tens_digit] : DIGIT_BLANK);
       writeEEPROM(lower_b_digit_addr, DIGITS[bb % 10]);
     }
   }
@@ -196,7 +200,9 @@ void write4BitDisplayEEPROM() {
     uint16_t tens_addr = 1280 + value;     // sets upper byte to 0000 0101
     uint16_t sign_addr = 1536 + value;     // sets upper byte to 0000 0110
     writeEEPROM(ones_addr, DIGITS[value % 10]);
-    writeEEPROM(tens_addr, DIGITS[value / 10]);
+
+    int tens_digit = value / 10;
+    writeEEPROM(tens_addr, (tens_digit != 0) ? DIGITS[tens_digit] : DIGIT_BLANK);
     writeEEPROM(sign_addr, DIGIT_BLANK);
   }
 
@@ -212,8 +218,20 @@ void write4BitDisplayEEPROM() {
     uint16_t sign_addr = 1536 + 32 + five_bit_value; // set upper 12 bits to 0000 0110 0010
         
     writeEEPROM(ones_addr, DIGITS[abs(value) % 10]);
-    writeEEPROM(tens_addr, DIGITS[abs(value) / 10]);
-    writeEEPROM(sign_addr, (value < 0) ? DIGIT_NEGATIVE : DIGIT_BLANK);
+    int tens_digit = abs(value) / 10;
+    writeEEPROM(tens_addr, (tens_digit != 0) ? DIGITS[tens_digit] : DIGIT_BLANK);
+
+    // start out by blanking out the far left (this may get overridden later)
+    writeEEPROM(sign_addr, DIGIT_BLANK);
+    
+    // now figure out where minus sign goes, either it's in the far left slot (e.g. "-12"),
+    //   or it's in the middle slot (e.g. " -5"), or there isn't one (e.g. " 14")either there isn't one,
+    //   or it's in far left (e.g. "-10"), or in middle (e.g. " -4");
+    if (value <= -10) {
+      writeEEPROM(sign_addr, DIGIT_NEGATIVE);
+    } else if (value < 0) {
+      writeEEPROM(tens_addr, DIGIT_NEGATIVE);
+    } // otherwise number is positive, nothing to do.
   }
 }
 
