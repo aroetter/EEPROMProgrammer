@@ -1,3 +1,6 @@
+// See comments at the top of the source for the 8BitComputer program for help troubleshooting
+// Mac<->Arduino Serial Post Comms Issues
+
 // define which arduino pins are used for what
 #define SHIFT_DATA    2
 #define SHIFT_CLK     3
@@ -170,7 +173,6 @@ void write8BitDisplayEEPROM() {
 // a5: 1 for "render in 2s complement", 0 for render in unsigned
 // a4-a0: the 5-bit number to render
 void write4BitDisplayEEPROM() {
-  // TODO: verify this is right?
   Serial.println("Programming operator EEPROM...");
   // for every possible AABB combination.
   for (uint8_t aa = 0; aa < 16; ++aa) {
@@ -617,31 +619,35 @@ void writeStoredProgramEEPROM() {
   }
 }
 
+typedef enum { EIGHT_BIT_DISPLAY, MICROCODE, FOUR_BIT_DISPLAY, READONLY } EEPROMTypeT;
+
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
  * Think of this like main() */
 void setup() {
   doCommonInit();
 
-  eraseEEPROM();
-  
-  Serial.println("Programming EEPROM...");
-
-#define EIGHT_BIT_LCD_EEPROM 0
-#define MICROCODE_EEPROM     0
-#define FOUR_BIT_LCD_EEPROM  1
-
-  // Usage: Do one of these 2 blocks
-#if EIGHT_BIT_LCD_EEROM
-  // Block 1: LCD displays
-  write8BitDisplayEEPROM();
-#elif MICROCODE_EEPROM
-  // Block 2: Microcode & stored programs
-  writeMicroCodeEEPROM();
-  writeStoredProgramEEPROM();
-#elif FOUR_BIT_LCD_EEPROM
-  write4BitDisplayEEPROM();
-#endif
-
+  EEPROMTypeT eepromType = EIGHT_BIT_DISPLAY;
+  switch (eepromType) {
+    case EIGHT_BIT_DISPLAY:
+      eraseEEPROM();
+      write8BitDisplayEEPROM();
+      break;
+    case MICROCODE:
+      eraseEEPROM();
+      writeMicroCodeEEPROM();
+      writeStoredProgramEEPROM();
+      break;
+    case FOUR_BIT_DISPLAY:
+      eraseEEPROM();
+      write4BitDisplayEEPROM();
+      break;
+    case READONLY:
+      break;
+    default:
+      Serial.println("FATAL: Not sure what you want me to do!");
+      Serial.flush();
+    abort();
+  }  
   printContents();
   Serial.println("Done.");
 }
