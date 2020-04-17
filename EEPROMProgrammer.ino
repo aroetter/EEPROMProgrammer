@@ -57,10 +57,10 @@ byte readEEPROM(uint16_t address) {
 
 // Write the given byte to a specific address
 void writeEEPROM(uint16_t address, byte data) {
+  setAddress(address, /* readMode */ false);
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     pinMode(pin, OUTPUT);
   }
-  setAddress(address, /* readMode */ false);
   for (int pin = EEPROM_D0; pin <= EEPROM_D7; ++pin) {
     digitalWrite(pin, data & 1);
     data = data >> 1;
@@ -626,7 +626,7 @@ typedef enum { EIGHT_BIT_DISPLAY, MICROCODE, FOUR_BIT_DISPLAY, READONLY } EEPROM
 void setup() {
   doCommonInit();
 
-  EEPROMTypeT eepromType = EIGHT_BIT_DISPLAY;
+  EEPROMTypeT eepromType = READONLY;
   switch (eepromType) {
     case EIGHT_BIT_DISPLAY:
       eraseEEPROM();
