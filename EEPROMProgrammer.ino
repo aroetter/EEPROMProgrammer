@@ -461,6 +461,8 @@ void writeMicroCodeEEPROM() {
   Serial.println("Programming microcode to load stored program from another EEPROM into RAM.");
   static int LOAD_PROG_MICROCODE_LEN = 64;
   static uint32_t STEP1 = CO|MI, STEP2 = PO|RI|CE;
+
+  #if 1
   static uint32_t LOAD_PROG_MICROCODE[] = {
     STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
     STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, STEP1, STEP2, 
@@ -469,13 +471,28 @@ void writeMicroCodeEEPROM() {
     HALT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 
   };
+#else
+  // Silly microcode that just loops through every control line on, one at a time, one per clock cycle.
+  // Makes it easy to debug the microcode board hardware, but otherwise totally useless. Final step
+  // is turning them all on.
+  static uint32_t LOAD_PROG_MICROCODE[] = {
+    HALT, MI, RI, RO, IO, II, AI, AO,
+    SO,  SU, BI, OI, CE, CO,  J, PO,
+    XO,  YO, JC, 0xffffffff, 0, 0, 0, 0,
+    0,    0,  0,  0,  0,  0,  0,  0,
+    0,    0,  0,  0,  0,  0,  0,  0,
+    0,    0,  0,  0,  0,  0,  0,  0,
+    0,    0,  0,  0,  0,  0,  0,  0,
+    0,    0,  0,  0,  0,  0,  0,  0
+  };
+#endif
   
   if ((sizeof(LOAD_PROG_MICROCODE) / sizeof(LOAD_PROG_MICROCODE[0])) != LOAD_PROG_MICROCODE_LEN) {
     Serial.println("Wrong sized 'Load Program from EEPROM' microcode definition!");
     Serial.flush();
     abort();
   }
-  
+
   uint16_t addr = 0x200; // set a9.
   for (uint16_t i = 0; i < LOAD_PROG_MICROCODE_LEN; ++i) {
     write24BitControlWordToEEPROMs(addr | i, LOAD_PROG_MICROCODE[i]);
@@ -626,7 +643,7 @@ typedef enum { EIGHT_BIT_DISPLAY, MICROCODE, FOUR_BIT_DISPLAY, READONLY } EEPROM
 void setup() {
   doCommonInit();
 
-  EEPROMTypeT eepromType = READONLY;
+  EEPROMTypeT eepromType = MICROCODE;
   switch (eepromType) {
     case EIGHT_BIT_DISPLAY:
       eraseEEPROM();
