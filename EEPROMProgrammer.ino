@@ -636,7 +636,7 @@ void writeStoredProgramEEPROM() {
   }
 }
 
-typedef enum { EIGHT_BIT_DISPLAY, MICROCODE, FOUR_BIT_DISPLAY, READONLY } EEPROMTypeT;
+typedef enum { EIGHT_BIT_DISPLAY, MICROCODE, FOUR_BIT_DISPLAY, READONLY, } EEPROMTypeT;
 
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
  * Think of this like main() */
