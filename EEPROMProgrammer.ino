@@ -1,5 +1,6 @@
 // See comments at the top of the source for the 8BitComputer program for help troubleshooting
 // Mac<->Arduino Serial Post Comms Issues
+// https://github.com/aroetter/8BitComputer
 
 // define which arduino pins are used for what
 #define SHIFT_DATA    2
@@ -73,7 +74,7 @@ void writeEEPROM(uint16_t address, byte data) {
 
 // Print out entire EEPROM contents, 16 bytes per line
 void printContents() {
-  Serial.println("------------------------------------------------------");
+  Serial.println("\n------------------------------------------------------");
   for (int base = 0; base < EEPROM_NUM_BYTES; base += 16) {
     byte data[16];
     for (int offset = 0; offset < 16; ++offset) {
@@ -636,20 +637,26 @@ void writeStoredProgramEEPROM() {
   }
 }
 
-typedef enum { EIGHT_BIT_DISPLAY, MICROCODE, FOUR_BIT_DISPLAY, READONLY, } EEPROMTypeT;
+typedef enum { EIGHT_BIT_DISPLAY, MICROCODE_AND_STORED_PROGRAMS, FOUR_BIT_DISPLAY, READONLY, } EEPROMTypeT;
 
 /* Arduino runs this function once after loading the Nano, or after pressing the HW reset button.
  * Think of this like main() */
 void setup() {
   doCommonInit();
 
-  EEPROMTypeT eepromType = MICROCODE;
+  /*
+   * ******************************************************************
+   * MODIFY THE BELOW VARIABLE TO DETERMINE WHAT EEPROM YOU ARE WRITING 
+   * ****************************************************************** 
+   */
+
+  EEPROMTypeT eepromType = READONLY;
   switch (eepromType) {
     case EIGHT_BIT_DISPLAY:
       eraseEEPROM();
       write8BitDisplayEEPROM();
       break;
-    case MICROCODE:
+    case MICROCODE_AND_STORED_PROGRAMS:
       eraseEEPROM();
       writeMicroCodeEEPROM();
       writeStoredProgramEEPROM();
