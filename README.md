@@ -13,7 +13,7 @@ We can program the EEPROM to do a few things. We control what EEPROM is written 
  both the operator numbers, and the result number.
 4. *READONLY*. Just print out the values of the EEPROM.
 
-In addition, to verify things are working, this repo saves the written values (aka output from READONLY mode), of each of the three different EEPROM contents.
+In addition, to verify things are working, this repo saves the written values (aka output from READONLY mode), of each of the three different EEPROM contents. See the files EEPROMContents.*.txt
 
 
 In general, see src for documentation.
